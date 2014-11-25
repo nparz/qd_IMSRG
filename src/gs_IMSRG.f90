@@ -51,7 +51,7 @@ emaxstr = adjustl(emaxstr)
   allocate(coefs(m,m))
 
   call construct_two_particle_HF_basis( n , hw , emax , HS, coefs )
-    
+  
   eHF=HF_E2( HS )
   e2nd = eHF +MBPT2( HS )   
   print*, eHF
@@ -83,17 +83,17 @@ emaxstr = adjustl(emaxstr)
   
   ETA%herm = -1 
 
-  call system('rm CI_spectrum.dat') 
+ ! call system('rm CI_spectrum.dat') 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  call run_simple_CI('n') 
-  
+ ! call run_simple_CI('y') 
+!  stop
 !!! set parameters for solver ~~~~~~~~~~~~~~~~~~~~~~~
   rel=1e-8       ! relative error
   abse=1e-6      ! absolute error
   flag=1         ! some stupid flag for the solver
   s=0.d0         ! inital flow parameter
   s_off=0.d0     ! offset in s
-  stp=0.2        ! initial step size
+  stp=0.02        ! initial step size
   crit = 1.d0    ! initial convergence test
   ocrit = 10.d0  ! previous critera
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -111,22 +111,44 @@ emaxstr = adjustl(emaxstr)
 ! trim(nstr)//'_'//trim(emaxstr)//'.dat')
 !=================================================================
 !!! start IM-SRG loop
+  
+  call build_TDAmat(HS,TDA)
+  call make_map
+  call calc_TDA(HS,TDA)
+  call diagonalize_blocks(TDA) 
+  call write_spec
+  
   pr = 0
   do while (crit > conv_criteria) 
  
+     sm =0.d0 
+     do q = 1, HS%nblock
+        sm = sm + Sqrt(sum(HS%mat(q)%Vpphh**2))
+     end do 
+     print*, sm
      crit=HS%E0 
      call vectorize(HS,cur_vec,neq)
      call ode( dGam, neq , cur_vec, HS, s, s+stp, rel, abse, flag, work2, iwork ) 
-     call repackage(HS,cur_vec,neq)
+     call repackage(HS,cur_vec,neq)     
+     call calc_TDA(HS,TDA)
+     call diagonalize_blocks(TDA) 
+     call write_spec
+        
      crit = abs( (crit - HS%E0 )/crit ) 
-     print*, crit
+    ! print*, crit
     ! pr = pr + 1 
-     !if (pr == 5) then 
-     call run_simple_CI('n')
-    ! pr = 0 
+   !  if (pr == 5) then
+  !      print*, 'CI:', s
+    !call run_simple_CI('n')
+   !  pr = 0 
     ! end if 
-  end do  
-
+  !call print_matrix(HS%fph)
+  end do
+   
+  print*, 'final s:', s
+  
+  call print_matrix(HS%fph)
+     
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !=================================================================
 !================================================================
@@ -210,9 +232,9 @@ subroutine run_simple_CI(evecs)
   write(offstr, '(f10.5)') e_off
   sstr = adjustl(sstr)
   offstr = adjustl(offstr)
-  print*, 'running CI'
+ ! print*, 'running CI'
   call system('./run_CI '//emaxstr//' '//nstr//' '//sstr//' '&
-       //offstr//' '//evecs//' 1 0') 
+       //offstr//' '//evecs//' 0 0') 
   
 end subroutine
 !===============================================        

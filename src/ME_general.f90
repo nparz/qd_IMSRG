@@ -34,7 +34,7 @@ type full_ham
    !!! holds fock elements (IN ENERGY ORDER)
    real(8),allocatable,dimension(:) :: eig
    !!! holds eigenvalues ( IN STATES ORDER ) 
-   integer,allocatable,dimension(:,:) :: states,threemap
+   integer,allocatable,dimension(:,:) :: states,threemap,exlabels
    !!! maps state order number to quantum numbers
    integer,allocatable,dimension(:,:) :: i_array
    !!! maps sp indeces to tp indece and other stuff
@@ -1266,7 +1266,7 @@ subroutine convertF(F,rec,m,qn,w)
      mn = minval(w)
      do j=1,m
         
-        if ( w(j) == mn ) then 
+        if ( abs(w(j) - mn) < 1e-6 ) then 
            rec%eh(i)=j
            rec%stoe(j)=i
            w(j)=1000. 
@@ -1281,7 +1281,7 @@ subroutine convertF(F,rec,m,qn,w)
      mn = minval(w)
      do j=1,m
         
-        if ( w(j) == mn ) then 
+        if ( abs(w(j) - mn) < 1e-6 ) then 
            rec%ep(i-n)=j
            rec%stoe(j)=i
            w(j)=1000. 

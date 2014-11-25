@@ -17,7 +17,7 @@ program TDA_IMSRG
   real(8) :: get_crit
   type(full_ham) :: HS,ETA , HD, w1,w2,H0
   type(full_sp_block_mat) :: TDA,OLD
-  character(5) :: hwstr,nstr,emaxstr,MLstr,MSstr,statestr
+  character(5) :: hwstr,nstr,emaxstr,offstr
   character(2) :: nhs,nps,nbs
   character(7) :: genstr
   logical :: test,check_conv
@@ -31,10 +31,12 @@ time=omp_get_wtime()
 call getarg(1,nstr)
 call getarg(2,hwstr)
 call getarg(3,emaxstr)
+call getarg(4,offstr) 
 
 read(nstr,'(I5)') n
 read(hwstr,'(f5.2)') hw
 read(emaxstr,'(I5)') emax
+read(offstr, '(f5.2)') s_off
 
 m = emax*(emax+1) !basis
 
@@ -44,7 +46,7 @@ nstr = adjustl(nstr)
 hwstr= adjustl(hwstr) 
 emaxstr = adjustl(emaxstr)
 
-s_off = 5.2
+
 !=================================================================
 
 !=================================================================
@@ -81,11 +83,9 @@ s_off = 5.2
   abse=1e-6      ! absolute error
   flag=1         ! some stupid flag for the solver
   s=0.d0         ! inital flow parameter
-  s_off=5.2d0     ! offset in s
-  stp=0.2        ! initial step size
+  stp=0.02        ! initial step size
   crit = 1.d0    ! initial convergence test
   ocrit = 10.d0  ! previous critera
-
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -94,7 +94,7 @@ s_off = 5.2
  !  if you want to plot the evolution with "s"
   open(unit=31, &
   file='../output/spectrum_'//trim(hwstr)//'_'//&
- trim(nstr)//'_'//trim(emaxstr)//'.dat')
+ trim(nstr)//'_'//trim(emaxstr)//'.dat',position='append')
   
 ! open(unit=41, &
 !  file='../output/convergence_'//trim(hwstr)//'_'//&
@@ -123,7 +123,12 @@ s_off = 5.2
  
  pr = 0
  do while ( test )
- 
+    
+     sm =0.d0 
+     do q = 1, HS%nblock
+        sm = sm + Sqrt(sum(HS%mat(q)%Vpphh**2))
+     end do 
+     print*, sm
      call vectorize(HS,cur_vec,neq)
      call ode( dG2, neq , cur_vec, HS, s, s+stp, rel, abse, flag, work2, iwork ) 
      call repackage(HS,cur_vec,neq)
@@ -133,11 +138,11 @@ s_off = 5.2
         
      test = check_conv(TDA,OLD,HS,block_index) 
      
-   !  pr = pr + 1 
-!     if (pr == 3) then 
-     call run_simple_CI('n')
- !    pr = 0 
-  !   end if 
+      !pr = pr + 1 
+      !if (pr == 3) then 
+      !call run_simple_CI('n')
+      !pr = 0 
+      !end if 
   end do
 
 
@@ -228,7 +233,7 @@ subroutine run_simple_CI(evecs)
   sstr = adjustl(sstr)
   offstr = adjustl(offstr) 
   call system('./run_CI '//emaxstr//' '//nstr//' '//sstr//' '&
-       //offstr//' '//evecs//' 1 0') 
+       //offstr//' '//evecs//' 0 0') 
   
 end subroutine
 !===============================================        

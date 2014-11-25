@@ -13,7 +13,6 @@ program simple_shell_model
   real(8) :: gx,s,offset,t1,t2,v_elem,omp_get_wtime
   real(16) :: bin_coef
  
-  
   yes = 'y' 
   call getarg(1,emaxstr)
   call getarg(2,nstr)
@@ -41,7 +40,7 @@ program simple_shell_model
   allocate(SD(R))
   
   call odometer(SD,m,n,R) ! calculate all possible SDs
-  !if you don't want broken pairs: 
+  !if you want to restrict to certain quantum nums 
   if ((yes == 'y') .or. (yes == 'Y')) then 
      !! this drastically reduces the number of SDs
 
@@ -71,15 +70,14 @@ program simple_shell_model
 
   call import_interaction(T,V,m) 
 
-  !t1 = omp_get_wtime()
-  call construct_H(SD,H,T,V,R,m,M2b,N)
-  !t2 = omp_get_wtime()
-  !print*, t2-t1
+  t1 = omp_get_wtime()
+  call construct_H(SD,H,T,V,R,m,M2b,N)    
+  t2 = omp_get_wtime()
+ 
   call dsyev('V','U',R,H,R,eig,dwork,10*R,info) 
   
- ! t1 = omp_get_wtime()
-  !print*, t1-t2
-  
+  t1 = omp_get_wtime()
+ 
   if (evecs == 'y') then 
      call find_percentages(SD,H,N,R,M,perc)
      open(unit=37,file = 'level_percentages.dat') 
@@ -319,6 +317,9 @@ end subroutine
 !==========================================
 subroutine to_binary(A,binout,M)
   ! writes an integer in binary
+  ! not using actual bit manipulation.
+  ! does not win us much to do so because we aren't using
+  ! lanczos. This is just convenient. 
   implicit none 
   
   integer :: M,i
@@ -438,7 +439,7 @@ real(kind=16) function fac(n)
 end function
 !===========================================
 subroutine restrict_to_qns(SD,SD_PAIR,M,N,R,R_P,qn,emax,ml,ms) 
-  !!! restricts basis to filled spatial orbitals
+  !!! restricts basis specific quantum nums
   implicit none
   
   integer :: M,N,R,R_P,i,j,k,emax,ml,ms,mlsum,mssum,q
@@ -447,7 +448,6 @@ subroutine restrict_to_qns(SD,SD_PAIR,M,N,R,R_P,qn,emax,ml,ms)
   integer,dimension(emax*emax+emax,3) :: qn
   
   k = 1
-  
   
   do i=1, R
      call to_binary(bin,SD(i),M)
@@ -465,11 +465,12 @@ subroutine restrict_to_qns(SD,SD_PAIR,M,N,R,R_P,qn,emax,ml,ms)
         q = q + 1
        
      end do 
+
      if ((mlsum == ml) .and. (mssum == ms) ) then  
         SD_pair(k) = SD(i)
-        k = k + 1
-   
+        k = k + 1   
      end if 
+
   end do 
   R_P = k-1
 end subroutine 

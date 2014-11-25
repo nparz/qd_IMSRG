@@ -169,13 +169,16 @@ subroutine build_imaginary_time( gen, rec )
  
   
   integer :: i,j,k,q,q1,q2,a,b,n,m,p(2),h(2),be(2),he(2),pe(2),pp,row(2,3)
+  integer :: sz,pos
   type(full_ham) ::  gen , rec 
   real(8) :: efs, Aph,mx,rb,denom
-
+  logical :: in,inSD
+  
   gen%herm = -1
   n=rec%nbody
   m=rec%Msp 
   
+  sz = size( rec%exlabels(:,2)) 
   
   do a=n+1,m
      do i=1,n
@@ -190,7 +193,7 @@ subroutine build_imaginary_time( gen, rec )
 
   do a = n+1,12
      do b = 12,m
-        
+        if ( .not. in(a,rec%exlabels(:,2),pos,sz)) cycle
         denom = rec%fpp(a-n,a-n) - rec%fpp(b-n,b-n) -v_elem(a,b,a,b,rec) 
         gen%fpp(a-n,b-n) = rec%fpp(a-n,b-n) * sign(1.d0,denom) * abs(denom)**.0001
         gen%fpp(b-n,a-n) = -1*gen%fpp(a-n,b-n) 
@@ -214,10 +217,12 @@ subroutine build_imaginary_time( gen, rec )
            he(1)=rec%stoe(h(1))
            he(2)=rec%stoe(h(2))
            
+           if (.not. in(be(2),rec%exlabels(:,1),pos,sz) ) cycle 
            efs=rec%fpp(be(1)-n,be(1)-n) 
            efs=efs+rec%fhh(be(2),be(2)) 
            efs=efs-rec%fhh(he(1),he(1)) 
            efs=efs-rec%fhh(he(2),he(2)) 
+           
            
            Aph=v_elem(he(1),he(2),he(1),he(2),rec) - &
                v_elem(he(1),be(1),he(1),be(1),rec) - &
@@ -244,7 +249,7 @@ subroutine build_imaginary_time( gen, rec )
            be(1)=max(rec%stoe(rec%mat(q)%qnph(J,1)),rec%stoe(rec%mat(q)%qnph(J,2)))
            be(2)=min(rec%stoe(rec%mat(q)%qnph(J,1)),rec%stoe(rec%mat(q)%qnph(J,2)))
            if (be(1) > 12) cycle
-           
+           if (.not. in(be(1),rec%exlabels(:,2),pos,sz)) cycle
            pe(1)=rec%stoe(p(1))
            pe(2)=rec%stoe(p(2))
           
@@ -280,7 +285,7 @@ subroutine build_imaginary_time( gen, rec )
            be(2)=min(rec%stoe(rec%mat(q)%qnph(J,1)),rec%stoe(rec%mat(q)%qnph(J,2)))
            
            if (be(1) < 13) cycle
-           
+           if (.not. inSD(be(2),pe(1),rec%exlabels,pos,sz)) cycle
            
            efs=-rec%fpp(be(1)-n,be(1)-n) 
            efs=efs-rec%fhh(be(2),be(2)) 
@@ -466,5 +471,55 @@ subroutine allocate_everything(rec,r2)
   
 end subroutine  
 !===================================================
+
+
+
 end module
 
+
+!=====================================================
+!=====================================================
+logical function in(element,list,position,sz) 
+  implicit none 
+  
+  integer :: sz
+  integer,dimension(sz) :: list
+  integer :: element,position,i
+  logical :: dum
+ 
+  dum = .false.
+  position = -1 
+  do i = 1,size(list)
+     if ( list(i) == element ) then 
+        dum = .true. 
+        exit
+        position = i 
+     end if 
+  end do 
+
+  in = dum 
+end function
+!=====================================================
+!=====================================================
+logical function inSD(i1,i2,list,position,sz) 
+  implicit none 
+  
+  integer :: sz
+  integer,dimension(sz,2) :: list
+  integer :: position,i,i1,i2
+  logical :: dum
+  
+  dum = .false. 
+  position = -1 
+  do i = 1,size(list(:,1)) 
+     if ( list(i,1) == i1) then 
+        if ( list(i,2) == i2 ) then 
+           position = i 
+           dum = .true. 
+           exit
+        end if 
+     end if 
+  end do 
+  
+  inSD = dum 
+end function

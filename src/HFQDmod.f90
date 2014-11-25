@@ -68,6 +68,7 @@ subroutine construct_two_particle_HF_BASIS( n , hw , emax , record ,coefs)
   !(unchanged in HF iterations)
   
   call arrange_states(emax,qnums,ordering) 
+  
   call calc_h0(T,hw,qnums) 
 
   ! figure out what the blocks are ahead of time

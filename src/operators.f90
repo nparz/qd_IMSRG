@@ -9,7 +9,6 @@ subroutine build_TDAmat(H,TDA)
   
   type(full_ham) :: H
   type(full_sp_block_mat) :: TDA
-  integer,allocatable,dimension(:,:) :: flb
   integer :: i,j,a,b,q,pre,II,JJ,kron_del,n,m,eF,emax
   integer :: lmax,li,la,si,sa,d,Ml,Ms
   
@@ -19,23 +18,23 @@ subroutine build_TDAmat(H,TDA)
   emax=nint((Sqrt(1.+4*m)-1)/2.)
   
   lmax=emax+ef-2
-  TDA%blocks=3*(2*lmax+1)
-  allocate(TDA%blkM(TDA%blocks))
-  allocate(TDA%map(TDA%blocks))
-  allocate(flb(n*(m-n),3)) 
- 
+  TDA%blocks=1!3*(2*lmax+1)
+ ! allocate(TDA%blkM(TDA%blocks))
+ ! allocate(TDA%map(TDA%blocks))
+  allocate(TDA%blkM(1),TDA%map(1))
+  
   q=1
   !! name the blocks
-  do Ms = -2,2,2
-     do Ml = -lmax,lmax
+!  do Ms = -2,2,2
+ !    do Ml = -lmax,lmax
         
         TDA%blkM(q)%lmda(1) = Ml
         TDA%blkM(q)%lmda(2) = Ms
         q=q+1
    
         
-     end do 
-  end do 
+  !   end do 
+  !end do 
  
   TDA%map = 0
   !find the dimension
@@ -50,10 +49,12 @@ subroutine build_TDAmat(H,TDA)
          Ml = la-li
          Ms = sa-si 
          
-         q=Ml+lmax+1+(2*lmax+1)*(Ms+2)/2 
+         if (( Ml == 0) .and. (Ms == 0)) then  
+         !q=Ml+lmax+1+(2*lmax+1)*(Ms+2)/2 
 !!this is the ordering established in the previous loop
          
-         TDA%map(q)=TDA%map(q)+1
+         TDA%map(1)=TDA%map(1)+1
+         end if 
      end do 
   end do        
   
@@ -80,18 +81,21 @@ subroutine build_TDAmat(H,TDA)
          Ml = la-li
          Ms = sa-si 
          
-         q=Ml+lmax+1+(2*lmax+1)*(Ms+2)/2          
-        
-         do d=1,TDA%map(q)
-            if (TDA%blkM(q)%labels(d,1) == 0) then 
-               TDA%blkM(q)%labels(d,1) = i
-               TDA%blkM(q)%labels(d,2) = a 
+         !q=Ml+lmax+1+(2*lmax+1)*(Ms+2)/2          
+         if (( Ml == 0) .and. (Ms == 0))  then 
+         do d=1,TDA%map(1)
+            if (TDA%blkM(1)%labels(d,1) == 0) then 
+               TDA%blkM(1)%labels(d,1) = i
+               TDA%blkM(1)%labels(d,2) = a 
                exit
             end if 
          end do 
-         
+         end if 
      end do 
-  end do             
+  end do        
+  
+  allocate(H%exlabels(TDA%map(1),2))
+  H%exlabels = TDA%blkM(1)%labels
 
 end subroutine 
 !==============================================================

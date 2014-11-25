@@ -104,14 +104,14 @@ call allocate_everything( HAM , w2  ) ! space
 
 !!! start IM-SRG loop for white~~~~~~~~~~~~~~~~
   hk=10.
-  stp=.5
+  stp=.7
   s_off = 0.d0 
   stp0=2.d0
 
- call copy_arrays(HAM,HS)
+  call copy_arrays(HAM,HS)
 
 
-open(unit=31,file='spectrum_magnus.dat')
+  open(unit=31,file='spectrum_magnus.dat')
 
   call build_TDAmat(HAM,TDA)  
   call make_map
@@ -119,31 +119,19 @@ open(unit=31,file='spectrum_magnus.dat')
   call diagonalize_blocks(TDA) 
   call write_spec  
 
- call s_evolve(build_wegner) 
+  call s_evolve(build_white) 
+ 
+  stp = .7  
+  s_off = s
+  stp0 = .5d0
+  s = 0.d0
+  crit = 1.d0
+ 
+   call copy_arrays(HS,HAM)
+   call set_to_zero(G) 
+ 
+   call s_evolve(build_imaginary_time) 
 
-goto 12
- stp = .001 
- s_off = s
- stp0 = .5d0
- s = 0.d0
- crit = 1.d0
- 
- call copy_arrays(HS,HAM)
- call set_to_zero(G) 
- 
- call s_evolve(build_white_phhh) 
- 
- stp = .001 
- s_off = s+s_off
- stp0 = .5d0
- s = 0.d0
- crit = 1.d0
- 
- call copy_arrays(HS,HAM)
- call set_to_zero(G) 
- 
- call s_evolve(build_white_ppph) 
-12 print*, 'fuck!'
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !if (emax == 7) then 
 !  call write_density(HAM,den,hw,coefs,G,w1,w2,INT1,INT2,AD,DS,s,emax)
@@ -230,9 +218,9 @@ subroutine s_evolve(build_gen)
      call copy_arrays(ETA,ETA0)
      call build_gen(ETA, HS ) 
      nrm2 = mat_2_norm(ETA)
-  
-     if ( nrm1 < nrm2 ) then 
-
+     print*, s,HS%E0,nrm1,nrm2,crit
+     if ( nrm1*1.5 < nrm2 ) then 
+        print*, 'faillll' 
          s=s-stp
          call copy_arrays(G0,G)
          call copy_arrays(HS0,HS)
@@ -247,8 +235,9 @@ subroutine s_evolve(build_gen)
        call diagonalize_blocks(TDA) 
        call write_spec  
         !stp = .1*stp0 + .9*stp
-        crit = abs( (xcrit - ocrit) / xcrit  ) ! wimpy convergence test
-        nrm1=nrm2
+     !   crit = abs( (xcrit - ocrit) / xcrit  ) ! wimpy convergence test
+       crit = nrm2  *  abs(nrm1-nrm2)/nrm1
+       nrm1=nrm2
         xcrit = ocrit
        
       end if   
@@ -257,7 +246,7 @@ subroutine s_evolve(build_gen)
       call diagonalize_blocks(TDA) 
       call write_spec  
       
-      write(42,*) s, crit
+!      write(42,*) s, crit
      !hk = HS%E0
      
 !!~~~~~~for plotting the evolution~~~~~~~~~~~~~~~~~~~~~~~
@@ -381,7 +370,7 @@ subroutine BCH_EXPAND(HS,G,H,INT1,INT2,AD,w1,w2)
   call copy_arrays( HS , INT2 )
  
   do i = 2 , 12
-          
+    !  print*, i    
      ! current value of HS is renamed INT1 
      ! INT2 is renamed AD, for the AD parameters in BCH and magnus expansions
      ! AD refers AD_n and INT2 becomes AD_{n+1} . 
@@ -448,7 +437,7 @@ subroutine BCH_NONPAR(HS,G,H,INT1,INT2,AD,w1,w2)
   call copy_arrays( HS , INT2 )
  
   do i = 2 , 12
-          
+       
      ! current value of HS is renamed INT1 
      ! INT2 is renamed AD, for the AD parameters in BCH and magnus expansions
      ! AD refers AD_n and INT2 becomes AD_{n+1} . 
@@ -493,22 +482,25 @@ subroutine MAGNUS_EXPAND(DG,G,ETA,INT1,INT2,AD,w1,w2)
   real(8), parameter :: conv = 1e-5
   integer :: trunc,i
   type(full_ham) :: G, ETA, INT1, INT2, DG, AD,w1,w2
-  real(8) ::  cof(4)
+  real(8) ::  cof(6)
  
   ! Intermediates are ANTI-HERMITIAN 
   INT2%herm = -1
   INT1%herm = -1 
   AD%herm = -1
   
-  cof = (/-0.5d0,.0833333333d0,0.d0,-0.00138888888d0/) 
+  cof = (/-0.5d0,.0833333333d0,0.d0,-0.00138888888d0,0.d0,0.0238095238d0/) 
   
   
   !! same deal as BCH expansion, which is explained ad nauseam above. 
   call copy_arrays( ETA, DG )  !ME_general
   call copy_arrays( DG , INT2 )
   
-  do i = 2 , 5
-          
+  return
+  do i = 2 , 7
+    
+     if ( abs(cof(i-1)) < 1e-5 ) cycle 
+        ! print*, i
      call copy_arrays( DG , INT1) 
      call copy_arrays( INT2 , AD ) 
    
@@ -523,14 +515,13 @@ subroutine MAGNUS_EXPAND(DG,G,ETA,INT1,INT2,AD,w1,w2)
      call xcommutator_122(G,AD,INT2)
      call xcommutator_222(G,AD,INT2,w1) 
   
-   
      call add_arrays(INT1 , 1.d0 , INT2 , cof(i-1) , DG ) !ME_general
-     if ( mat_2_norm(INT2)*cof(i-1) / mat_2_norm(INT1) < conv ) exit 
+     if ( mat_2_norm(INT2) *abs(cof(i-1))/ mat_2_norm(INT1) < conv ) exit 
   end do 
   
   
 end subroutine 
-!=====================================================
+!====================================================
 !=====================================================
 subroutine euler_step(G,DG,s,stp)
   use ME_general
