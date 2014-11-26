@@ -13,3 +13,7 @@ calc_TBME
 output/*
 TBMEfiles/*
 hamiltonians/*
+*.bat
+*.o*
+PBS*
+pbs*
