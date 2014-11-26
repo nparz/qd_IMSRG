@@ -196,7 +196,7 @@ subroutine export_hamiltonian(H,fname)
   
   integer :: i,j,n,m,q,np,nh,nb
   type(full_ham) :: H
-  character(50) :: fname
+  character(*) :: fname
 
   n=H%nbody
   m=H%msp
@@ -274,7 +274,7 @@ subroutine import_hamiltonian(H,fname)
   
   integer :: i,j,n,m,q,np,nh,nb
   type(full_ham) :: H
-  character(50) :: fname
+  character(*) :: fname
 
   n=H%nbody
   m=H%msp

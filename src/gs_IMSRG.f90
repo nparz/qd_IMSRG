@@ -119,13 +119,13 @@ emaxstr = adjustl(emaxstr)
 !=================================================================
 !!! start IM-SRG loop
   
-  call build_TDAmat(HS,TDA)
-  call make_map
-  call calc_TDA(HS,TDA)
-  call diagonalize_blocks(TDA) 
-  call write_spec
+!  call build_TDAmat(HS,TDA)
+  ! call make_map
+  ! call calc_TDA(HS,TDA)
+  ! call diagonalize_blocks(TDA) 
+  ! call write_spec
   
-  pr = 0
+  pr = 1
   do while (crit > conv_criteria) 
  
      sm =0.d0 
@@ -133,14 +133,13 @@ emaxstr = adjustl(emaxstr)
      call vectorize(HS,cur_vec,neq)
      call ode( dGam, neq , cur_vec, HS, s, s+stp, rel, abse, flag, work2, iwork ) 
      call repackage(HS,cur_vec,neq)     
-     call calc_TDA(HS,TDA)
-     call diagonalize_blocks(TDA) 
-     call write_spec
+     ! call calc_TDA(HS,TDA)
+     ! call diagonalize_blocks(TDA) 
+     ! call write_spec
         
      crit = abs( (crit - HS%E0 )/crit ) 
-     print*, crit
-     ! print*, crit
-    ! pr = pr + 1 
+     write(*,'(I5,3(e14.6))') pr,s,HS%E0,crit
+     pr = pr + 1 
    !  if (pr == 5) then
   !      print*, 'CI:', s
     !call run_simple_CI('n')
@@ -151,7 +150,7 @@ emaxstr = adjustl(emaxstr)
    
   print*, 'final s:', s
   
-  call print_matrix(HS%fph)
+ ! call print_matrix(HS%fph)
      
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !=================================================================
@@ -165,8 +164,8 @@ time2 = omp_get_wtime()
   write(39,'(I4,I5,3(f15.9),f15.4)') emax,m,eHF,e2nd,HS%E0,log(time2-time)
   close(39)
   
-  call export_hamiltonian(HS) 
-
+  call export_hamiltonian(HS,'ham_'//trim(nstr)//'_'//trim(hwstr) &
+       //'_'//trim(emaxstr)) 
 
 contains 
 !=================================================================
