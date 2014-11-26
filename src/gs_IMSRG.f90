@@ -23,7 +23,7 @@ program gs_IMSRG
   character(5) :: hwstr,nstr,emaxstr,mlstr,msstr,cutstr
   character(2) :: nhs,nps,nbs
   character(7) :: genstr
-  logical :: test,check_conv
+  logical :: test,check_conv,run_tda
   external :: dGam
 !=================================================================
  !!! gather inputs, start timer, open file for GS write
@@ -37,13 +37,20 @@ call getarg(4,mlstr)
 call getarg(5,msstr) 
 call getarg(6,cutstr) 
 
+If ( len(trim(adjustl(mlstr)))* len(trim(adjustl(msstr))) &
+     * len(trim(adjustl(cutstr))) > 0 ) then 
+   run_tda = .true. 
+   read(mlstr,'(I5)') HS%mltarg
+   read(msstr,'(I5)') HS%mstarg
+   read(cutstr,'(I5)') HS%cutshell
+else 
+   run_tda = .false. 
+end if 
 
 read(nstr,'(I5)') n
 read(hwstr,'(f5.2)') hw
 read(emaxstr,'(I5)') emax
-read(mlstr,'(I5)') HS%mltarg
-read(msstr,'(I5)') HS%mstarg
-read(cutstr,'(I5)') HS%cutshell
+
 m = emax*(emax+1) !basis
 
 write(hwstr,'(f5.2)') hw
@@ -61,7 +68,7 @@ emaxstr = adjustl(emaxstr)
   
   eHF=HF_E2( HS )
   e2nd = eHF +MBPT2( HS )   
-  print*, eHF
+  print*, 'Hartree-Fock Energy: ', eHF
 !=================================================================  
 
 
@@ -109,21 +116,22 @@ emaxstr = adjustl(emaxstr)
  
 !==================================================================  
  !  if you want to plot the evolution with "s"
+
+if (run_tda) then 
   open(unit=31, &
   file='../output/spectrum_'//trim(hwstr)//'_'//&
- trim(nstr)//'_'//trim(emaxstr)//'.dat')
-  
-! open(unit=41, &
-!  file='../output/convergence_'//trim(hwstr)//'_'//&
-! trim(nstr)//'_'//trim(emaxstr)//'.dat')
-!=================================================================
+ trim(nstr)//'_'//trim(emaxstr)//'_Ml'//trim(Mlstr)//&
+ 'Ms'//trim(msstr)//'.dat')
+end if 
+  !=================================================================
 !!! start IM-SRG loop
   
-!  call build_TDAmat(HS,TDA)
-  ! call make_map
-  ! call calc_TDA(HS,TDA)
-  ! call diagonalize_blocks(TDA) 
-  ! call write_spec
+  if (run_tda) then 
+     call build_TDAmat(HS,TDA)
+     call calc_TDA(HS,TDA)
+     call diagonalize_blocks(TDA) 
+     call write_spec
+  end if 
   
   pr = 1
   do while (crit > conv_criteria) 
@@ -133,10 +141,13 @@ emaxstr = adjustl(emaxstr)
      call vectorize(HS,cur_vec,neq)
      call ode( dGam, neq , cur_vec, HS, s, s+stp, rel, abse, flag, work2, iwork ) 
      call repackage(HS,cur_vec,neq)     
-     ! call calc_TDA(HS,TDA)
-     ! call diagonalize_blocks(TDA) 
-     ! call write_spec
-        
+     
+     if (run_tda) then 
+      call calc_TDA(HS,TDA)
+      call diagonalize_blocks(TDA) 
+      call write_spec
+     end if 
+     
      crit = abs( (crit - HS%E0 )/crit ) 
      write(*,'(I5,3(e14.6))') pr,s,HS%E0,crit
      pr = pr + 1 
@@ -149,9 +160,7 @@ emaxstr = adjustl(emaxstr)
   end do
    
   print*, 'final s:', s
-  
- ! call print_matrix(HS%fph)
-     
+       
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !=================================================================
 !================================================================

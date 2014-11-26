@@ -20,7 +20,7 @@ program TDA_IMSRG
   character(5) :: hwstr,nstr,emaxstr,offstr,mlstr,msstr,cutstr
   character(2) :: nhs,nps,nbs
   character(7) :: genstr
-  logical :: test,check_conv
+  logical :: test,check_conv,run_tda
   external :: dG2
 
 !=================================================================
@@ -34,11 +34,18 @@ call getarg(3,emaxstr)
 call getarg(4,mlstr)
 call getarg(5,msstr) 
 call getarg(6,cutstr) 
+call getarg(7,offstr) 
+
+run_tda=.false.
+s_off = 0.d0 
+If ( len(trim(adjustl(offstr))) > 0 ) then 
+   run_tda = .true. 
+end if 
 
 read(nstr,'(I5)') n
 read(hwstr,'(f5.2)') hw
 read(emaxstr,'(I5)') emax
-!read(offstr, '(f5.2)') s_off
+if (run_tda) read(offstr, '(f5.2)') s_off
 read(mlstr,'(I5)') HS%mltarg
 read(msstr,'(I5)') HS%mstarg
 read(cutstr,'(I5)') HS%cutshell
@@ -92,25 +99,27 @@ emaxstr = adjustl(emaxstr)
   stp=0.1        ! initial step size
   crit = 1.d0    ! initial convergence test
   ocrit = 10.d0  ! previous critera
-  s_off = 0.d0   ! offset of s 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
  
 !==================================================================  
  !  if you want to plot the evolution with "s"
-  open(unit=31, &
+if (run_tda) then ! this i
+ open(unit=31, &
   file='../output/spectrum_'//trim(hwstr)//'_'//&
- trim(nstr)//'_'//trim(emaxstr)//'.dat',position='append')
-  
-! open(unit=41, &
-!  file='../output/convergence_'//trim(hwstr)//'_'//&
-! trim(nstr)//'_'//trim(emaxstr)//'.dat')
+ trim(nstr)//'_'//trim(emaxstr)//'_Ml'//trim(Mlstr)//&
+ 'Ms'//trim(msstr)//'.dat',position='append')
+else 
+ open(unit=31, &
+  file='../output/spectrum_'//trim(hwstr)//'_'//&
+ trim(nstr)//'_'//trim(emaxstr)//'_Ml'//trim(Mlstr)//&
+ 'Ms'//trim(msstr)//'.dat')
+end if 
 !=================================================================
 !!! start IM-SRG loop
   
   call build_TDAmat(HS,TDA)
- ! call make_map
   call calc_TDA(HS,TDA)
   call diagonalize_blocks(TDA) 
   call write_spec
