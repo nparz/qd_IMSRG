@@ -20,7 +20,7 @@ program gs_IMSRG
   real(8) :: get_crit
   type(full_ham) :: HS,ETA , HD, w1,w2,H0
   type(full_sp_block_mat) :: TDA,OLD
-  character(5) :: hwstr,nstr,emaxstr
+  character(5) :: hwstr,nstr,emaxstr,mlstr,msstr,cutstr
   character(2) :: nhs,nps,nbs
   character(7) :: genstr
   logical :: test,check_conv
@@ -33,10 +33,17 @@ time=omp_get_wtime()
 call getarg(1,nstr)
 call getarg(2,hwstr)
 call getarg(3,emaxstr)
+call getarg(4,mlstr)
+call getarg(5,msstr) 
+call getarg(6,cutstr) 
+
 
 read(nstr,'(I5)') n
 read(hwstr,'(f5.2)') hw
 read(emaxstr,'(I5)') emax
+read(mlstr,'(I5)') HS%mltarg
+read(msstr,'(I5)') HS%mstarg
+read(cutstr,'(I5)') HS%cutshell
 m = emax*(emax+1) !basis
 
 write(hwstr,'(f5.2)') hw
@@ -93,7 +100,7 @@ emaxstr = adjustl(emaxstr)
   flag=1         ! some stupid flag for the solver
   s=0.d0         ! inital flow parameter
   s_off=0.d0     ! offset in s
-  stp=0.02        ! initial step size
+  stp=0.1        ! initial step size
   crit = 1.d0    ! initial convergence test
   ocrit = 10.d0  ! previous critera
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -122,10 +129,6 @@ emaxstr = adjustl(emaxstr)
   do while (crit > conv_criteria) 
  
      sm =0.d0 
-     do q = 1, HS%nblock
-        sm = sm + Sqrt(sum(HS%mat(q)%Vpphh**2))
-     end do 
-     print*, sm
      crit=HS%E0 
      call vectorize(HS,cur_vec,neq)
      call ode( dGam, neq , cur_vec, HS, s, s+stp, rel, abse, flag, work2, iwork ) 
@@ -135,7 +138,8 @@ emaxstr = adjustl(emaxstr)
      call write_spec
         
      crit = abs( (crit - HS%E0 )/crit ) 
-    ! print*, crit
+     print*, crit
+     ! print*, crit
     ! pr = pr + 1 
    !  if (pr == 5) then
   !      print*, 'CI:', s
@@ -251,18 +255,19 @@ subroutine write_spec
   levs(2) = HS%E0
   i=3
   do q=1,TDA%blocks
+  
      if ( TDA%map(q) > 0 ) then 
         levs(i:i+TDA%map(q)-1) = TDA%blkM(q)%eigval + HS%E0
         i = i + TDA%map(q)
      end if 
   end do 
   
-  i = n*(m-n)+2
+  i = i-1
   write(levnum,'(I3)') i
   levnum=adjustl(levnum) 
   fmt =  '('//trim(levnum)//'(f12.7))' 
   
-  write(31,trim(fmt)) levs
+  write(31,trim(fmt)) levs(1:i)
  
 end subroutine
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    

@@ -61,110 +61,18 @@ subroutine build_wegner(gen, H)
 end subroutine 
 !==============================================
 !==============================================
-subroutine build_white_mixed( gen, rec ) 
-  ! removes phhh 
-  implicit none
- 
-  
-  integer :: i,j,k,q,q1,q2,a,n,m,p(2),h(2),be(2),he(2),pe(2),pp,row(2,3)
-  type(full_ham) ::  gen , rec 
-  real(8) :: efs, Aph,mx,rb,denom
-  real(8), parameter :: dcut = 0.07
-  
-  gen%herm = -1
-  n=rec%nbody
-  m=rec%Msp 
-  
-  
-  do a=n+1,m
-     do i=1,n
-       
+subroutine build_specific_space( gen, rec ) 
+  ! decouples 1p1h from 2p2h for specific, specifed set of states 
+  ! also considers only 1p1h exciations into a valence space (rec%cutshell) 
 
-        gen%fph(a-n,i) = rec%fph(a-n,i) / &
-             ( rec%fpp(a-n,a-n) - rec%fhh(i,i) - v_elem(a,i,a,i,rec) ) 
-      
-        
-     end do
-  end do 
-
- 
-  !!! two body term !!!
-
-  mx = 0.
-  do q=1,rec%nblock
-     
-     if ( rec%mat(q)%nph*rec%mat(q)%nhh > 0 ) then 
-
-     do i=1,gen%mat(q)%nph
-        do j=1,gen%mat(q)%nhh
-           
-           h(:)=rec%mat(q)%qnhh(j,:)
-          
-           be(1)=max(rec%stoe(rec%mat(q)%qnph(I,1)),rec%stoe(rec%mat(q)%qnph(I,2)))
-           be(2)=min(rec%stoe(rec%mat(q)%qnph(I,1)),rec%stoe(rec%mat(q)%qnph(I,2)))
-           he(1)=rec%stoe(h(1))
-           he(2)=rec%stoe(h(2))
-           
-           efs=rec%fpp(be(1)-n,be(1)-n) 
-           efs=efs+rec%fhh(be(2),be(2)) 
-           efs=efs-rec%fhh(he(1),he(1)) 
-           efs=efs-rec%fhh(he(2),he(2)) 
-           
-           Aph=v_elem(he(1),he(2),he(1),he(2),rec) - &
-               v_elem(he(1),be(1),he(1),be(1),rec) - &
-               v_elem(he(2),be(1),he(2),be(1),rec) 
-           
-           denom = efs + Aph 
-           if (abs(denom) > dcut) then
-              gen%mat(q)%Vphhh(i,j) = rec%mat(q)%Vphhh(i,j)/ denom
-           end if 
-                
-        end do 
-     end do 
-     
-   end if 
- 
-   
-     if ( rec%mat(q)%nph*rec%mat(q)%npp > 0 ) then 
-         
-     do i=1,gen%mat(q)%npp
-        do j=1,gen%mat(q)%nph
-           
-           p(:)=rec%mat(q)%qnpp(i,:)
-       
-           be(1)=max(rec%stoe(rec%mat(q)%qnph(J,1)),rec%stoe(rec%mat(q)%qnph(J,2)))
-           be(2)=min(rec%stoe(rec%mat(q)%qnph(J,1)),rec%stoe(rec%mat(q)%qnph(J,2)))
-           pe(1)=rec%stoe(p(1))
-           pe(2)=rec%stoe(p(2))
-          
-           efs=-rec%fpp(be(1)-n,be(1)-n) 
-           efs=efs-rec%fhh(be(2),be(2)) 
-           efs=efs+rec%fpp(pe(1)-n,pe(1)-n) 
-           efs=efs+rec%fpp(pe(2)-n,pe(2)-n) 
-           
-          Aph=v_elem(pe(1),pe(2),pe(1),pe(2),rec) - &
-               v_elem(pe(1),be(2),pe(1),be(2),rec) - &
-               v_elem(pe(2),be(2),pe(2),be(2),rec) 
-           
-           denom = efs+Aph
-           if (abs(denom) > dcut) then
-              gen%mat(q)%Vppph(i,j) = rec%mat(q)%Vppph(i,j)/denom
-           end if  
-        
-           
-        end do 
-      end do 
-     
- 
-     end if
-
-  end do 
-  
-end subroutine
-!==============================================
-!==============================================
-subroutine build_imaginary_time( gen, rec ) 
-  ! removes phhh 
+! labeling scheme ---------------------------------
+! p - particle
+! h - hole
+! q - non-valence particle
+! v - valence particle
+! a - particle in specific set |(a)(i-)>
+! i - hole in specific set |(a)(i-)>
+!---------------------------------------------------  
   implicit none
  
   
@@ -177,22 +85,25 @@ subroutine build_imaginary_time( gen, rec )
   gen%herm = -1
   n=rec%nbody
   m=rec%Msp 
-  
+   
   sz = size( rec%exlabels(:,2)) 
   
+
+! decouple one body
+  ! ph 
   do a=n+1,m
      do i=1,n
        
         denom = rec%fpp(a-n,a-n) - rec%fhh(i,i) - v_elem(a,i,a,i,rec)
         gen%fph(a-n,i) = rec%fph(a-n,i) * &
       sign(1.d0 ,denom ) * abs(denom)**.0001 
-      
         
      end do
   end do 
-
-  do a = n+1,12
-     do b = 12,m
+  
+  !qa
+  do a = n+1,rec%cutshell
+     do b = rec%cutshell,m
         if ( .not. in(a,rec%exlabels(:,2),pos,sz)) cycle
         denom = rec%fpp(a-n,a-n) - rec%fpp(b-n,b-n) -v_elem(a,b,a,b,rec) 
         gen%fpp(a-n,b-n) = rec%fpp(a-n,b-n) * sign(1.d0,denom) * abs(denom)**.0001
@@ -207,6 +118,7 @@ subroutine build_imaginary_time( gen, rec )
      
      if ( rec%mat(q)%nph*rec%mat(q)%nhh > 0 ) then 
 
+        ! pihh
      do i=1,gen%mat(q)%nph
         do j=1,gen%mat(q)%nhh
            
@@ -240,7 +152,7 @@ subroutine build_imaginary_time( gen, rec )
  
    
      if ( rec%mat(q)%nph*rec%mat(q)%npp > 0 ) then 
-         
+         !ppah
      do i=1,gen%mat(q)%npp
         do j=1,gen%mat(q)%nph
            
@@ -248,7 +160,7 @@ subroutine build_imaginary_time( gen, rec )
        
            be(1)=max(rec%stoe(rec%mat(q)%qnph(J,1)),rec%stoe(rec%mat(q)%qnph(J,2)))
            be(2)=min(rec%stoe(rec%mat(q)%qnph(J,1)),rec%stoe(rec%mat(q)%qnph(J,2)))
-           if (be(1) > 12) cycle
+           if (be(1) > rec%cutshell) cycle
            if (.not. in(be(1),rec%exlabels(:,2),pos,sz)) cycle
            pe(1)=rec%stoe(p(1))
            pe(2)=rec%stoe(p(2))
@@ -273,18 +185,18 @@ subroutine build_imaginary_time( gen, rec )
 
      
      if ( rec%mat(q)%nph > 0 ) then 
-         
+         ! qiah
      do i=1,gen%mat(q)%nph
         pe(1)=max(rec%stoe(rec%mat(q)%qnph(I,1)),rec%stoe(rec%mat(q)%qnph(I,2)))
         pe(2)=min(rec%stoe(rec%mat(q)%qnph(I,1)),rec%stoe(rec%mat(q)%qnph(I,2)))
-        if (pe(1) > 12) cycle
+        if (pe(1) > rec%cutshell) cycle
         
         do j=i+1,gen%mat(q)%nph
               
            be(1)=max(rec%stoe(rec%mat(q)%qnph(J,1)),rec%stoe(rec%mat(q)%qnph(J,2)))
            be(2)=min(rec%stoe(rec%mat(q)%qnph(J,1)),rec%stoe(rec%mat(q)%qnph(J,2)))
            
-           if (be(1) < 13) cycle
+           if (be(1) < rec%cutshell+1) cycle
            if (.not. inSD(be(2),pe(1),rec%exlabels,pos,sz)) cycle
            
            efs=-rec%fpp(be(1)-n,be(1)-n) 
@@ -307,34 +219,156 @@ subroutine build_imaginary_time( gen, rec )
 end subroutine
 !==============================================
 !==============================================
-subroutine xbuild_imaginary_time( gen, rec ) 
-  ! removes phhh 
+subroutine build_imaginary_time( gen, rec ) 
+    ! decouples 1p1h from 2p2h for specific, for only
+    ! 1p1h excitations into a specified valence space (rec%cutshell) 
+! labeling scheme ---------------------------------
+! p - particle
+! h - hole
+! q - non-valence particle
+! v - valence particle
+! a - particle in specific set |(a)(i-)>
+! i - hole in specific set |(a)(i-)>
+!---------------------------------------------------  
   implicit none
  
   
-  integer :: i,j,k,q,q1,q2,a,n,m,p(2),h(2),be(2),he(2),pe(2),pp,row(2,3)
+  integer :: i,j,k,q,q1,q2,a,b,n,m,p(2),h(2),be(2),he(2),pe(2),pp,row(2,3)
+  integer :: sz,pos
   type(full_ham) ::  gen , rec 
   real(8) :: efs, Aph,mx,rb,denom
+  logical :: in,inSD
   
   gen%herm = -1
   n=rec%nbody
   m=rec%Msp 
   
-  gen%fph = rec%fph
-             
+  ! one body term
+  !ph
+  do a=n+1,m
+     do i=1,n
+       
+        denom = rec%fpp(a-n,a-n) - rec%fhh(i,i) - v_elem(a,i,a,i,rec)
+        gen%fph(a-n,i) = rec%fph(a-n,i) * &
+      sign(1.d0 ,denom ) * abs(denom)**.0001 
+      
+        
+     end do
+  end do 
+
+! qv
+  do a = n+1,rec%cutshell
+     do b = rec%cutshell,m
+        denom = rec%fpp(a-n,a-n) - rec%fpp(b-n,b-n) -v_elem(a,b,a,b,rec) 
+        gen%fpp(a-n,b-n) = rec%fpp(a-n,b-n) * sign(1.d0,denom) * abs(denom)**.0001
+        gen%fpp(b-n,a-n) = -1*gen%fpp(a-n,b-n) 
+     end do 
+  end do 
+
   !!! two body term !!!
 
+  mx = 0.
   do q=1,rec%nblock
      
      if ( rec%mat(q)%nph*rec%mat(q)%nhh > 0 ) then 
-         gen%mat(q)%Vphhh = rec%mat(q)%Vphhh
-     end if 
+        
+     ! phhh    
+     do i=1,gen%mat(q)%nph
+        do j=1,gen%mat(q)%nhh
+           
+           h(:)=rec%mat(q)%qnhh(j,:)
+          
+           be(1)=max(rec%stoe(rec%mat(q)%qnph(I,1)),rec%stoe(rec%mat(q)%qnph(I,2)))
+           be(2)=min(rec%stoe(rec%mat(q)%qnph(I,1)),rec%stoe(rec%mat(q)%qnph(I,2)))
+           he(1)=rec%stoe(h(1))
+           he(2)=rec%stoe(h(2))
+           
+ 
+           efs=rec%fpp(be(1)-n,be(1)-n) 
+           efs=efs+rec%fhh(be(2),be(2)) 
+           efs=efs-rec%fhh(he(1),he(1)) 
+           efs=efs-rec%fhh(he(2),he(2)) 
+           
+           
+           Aph=v_elem(he(1),he(2),he(1),he(2),rec) - &
+               v_elem(he(1),be(1),he(1),be(1),rec) - &
+               v_elem(he(2),be(1),he(2),be(1),rec) 
+           
+           denom = efs + Aph 
+          
+           gen%mat(q)%Vphhh(i,j) = rec%mat(q)%Vphhh(i,j)* sign(1.d0, denom)*abs(denom)**.0001
+          
+                
+        end do 
+     end do 
+     
+   end if 
  
    
      if ( rec%mat(q)%nph*rec%mat(q)%npp > 0 ) then 
-        gen%mat(q)%Vppph = rec%mat(q)%Vppph
+         
+     !ppvh    
+     do i=1,gen%mat(q)%npp
+        do j=1,gen%mat(q)%nph
+           
+           p(:)=rec%mat(q)%qnpp(i,:)
+       
+           be(1)=max(rec%stoe(rec%mat(q)%qnph(J,1)),rec%stoe(rec%mat(q)%qnph(J,2)))
+           be(2)=min(rec%stoe(rec%mat(q)%qnph(J,1)),rec%stoe(rec%mat(q)%qnph(J,2)))
+           if (be(1) > rec%cutshell) cycle
+ 
+           pe(1)=rec%stoe(p(1))
+           pe(2)=rec%stoe(p(2))
+          
+           efs=-rec%fpp(be(1)-n,be(1)-n) 
+           efs=efs-rec%fhh(be(2),be(2)) 
+           efs=efs+rec%fpp(pe(1)-n,pe(1)-n) 
+           efs=efs+rec%fpp(pe(2)-n,pe(2)-n) 
+           
+          Aph=v_elem(pe(1),pe(2),pe(1),pe(2),rec) - &
+               v_elem(pe(1),be(2),pe(1),be(2),rec) - &
+               v_elem(pe(2),be(2),pe(2),be(2),rec) 
+           
+           denom = efs+Aph
+           
+           gen%mat(q)%Vppph(i,j) = rec%mat(q)%Vppph(i,j)*sign(1.d0,denom)*abs(denom)**.0001
+           
+        end do 
+      end do 
+           
      end if
 
+     
+     if ( rec%mat(q)%nph > 0 ) then 
+     ! qhvh     
+     do i=1,gen%mat(q)%nph
+        pe(1)=max(rec%stoe(rec%mat(q)%qnph(I,1)),rec%stoe(rec%mat(q)%qnph(I,2)))
+        pe(2)=min(rec%stoe(rec%mat(q)%qnph(I,1)),rec%stoe(rec%mat(q)%qnph(I,2)))
+        if (pe(1) > rec%cutshell) cycle
+        
+        do j=i+1,gen%mat(q)%nph
+              
+           be(1)=max(rec%stoe(rec%mat(q)%qnph(J,1)),rec%stoe(rec%mat(q)%qnph(J,2)))
+           be(2)=min(rec%stoe(rec%mat(q)%qnph(J,1)),rec%stoe(rec%mat(q)%qnph(J,2)))
+           
+           if (be(1) < rec%cutshell+1) cycle
+ 
+           
+           efs=-rec%fpp(be(1)-n,be(1)-n) 
+           efs=efs-rec%fhh(be(2),be(2)) 
+           efs=efs+rec%fpp(pe(1)-n,pe(1)-n) 
+           efs=efs+rec%fhh(pe(2),pe(2)) 
+                     
+           denom = efs
+           
+           gen%mat(q)%Vphph(i,j) = rec%mat(q)%Vphph(i,j)*sign(1.d0,denom)*abs(denom)**.0001
+           gen%mat(q)%Vphph(j,i) = -1*gen%mat(q)%Vphph(i,j) 
+           
+        end do 
+      end do 
+     
+ 
+     end if
   end do 
   
 end subroutine

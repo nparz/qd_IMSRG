@@ -17,7 +17,7 @@ program TDA_IMSRG
   real(8) :: get_crit
   type(full_ham) :: HS,ETA , HD, w1,w2,H0
   type(full_sp_block_mat) :: TDA,OLD
-  character(5) :: hwstr,nstr,emaxstr,offstr
+  character(5) :: hwstr,nstr,emaxstr,offstr,mlstr,msstr,cutstr
   character(2) :: nhs,nps,nbs
   character(7) :: genstr
   logical :: test,check_conv
@@ -32,11 +32,17 @@ call getarg(1,nstr)
 call getarg(2,hwstr)
 call getarg(3,emaxstr)
 call getarg(4,offstr) 
+call getarg(5,mlstr)
+call getarg(6,msstr) 
+call getarg(7,cutstr) 
 
 read(nstr,'(I5)') n
 read(hwstr,'(f5.2)') hw
 read(emaxstr,'(I5)') emax
 read(offstr, '(f5.2)') s_off
+read(mlstr,'(I5)') HS%mltarg
+read(msstr,'(I5)') HS%mstarg
+read(cutstr,'(I5)') HS%cutshell
 
 m = emax*(emax+1) !basis
 
@@ -54,7 +60,8 @@ emaxstr = adjustl(emaxstr)
   allocate(coefs(m,m))
 
   call construct_two_particle_HF_basis( n , hw , emax , HS, coefs )
-  call import_hamiltonian(HS)    
+  call import_hamiltonian(HS,'ham_'//trim(nstr)//'_'//trim(hwstr) &
+       //'_'//trim(emaxstr)//'.dat')    
 
 !!! allocate workspaces ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
   HS%IMSRG3 = .false. ! use IMSRG(2) formulas
@@ -83,7 +90,7 @@ emaxstr = adjustl(emaxstr)
   abse=1e-6      ! absolute error
   flag=1         ! some stupid flag for the solver
   s=0.d0         ! inital flow parameter
-  stp=0.02        ! initial step size
+  stp=0.1        ! initial step size
   crit = 1.d0    ! initial convergence test
   ocrit = 10.d0  ! previous critera
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -125,10 +132,6 @@ emaxstr = adjustl(emaxstr)
  do while ( test )
     
      sm =0.d0 
-     do q = 1, HS%nblock
-        sm = sm + Sqrt(sum(HS%mat(q)%Vpphh**2))
-     end do 
-     print*, sm
      call vectorize(HS,cur_vec,neq)
      call ode( dG2, neq , cur_vec, HS, s, s+stp, rel, abse, flag, work2, iwork ) 
      call repackage(HS,cur_vec,neq)
@@ -256,12 +259,12 @@ subroutine write_spec
      end if 
   end do 
   
-  i = n*(m-n)+2
+  i = i-1
   write(levnum,'(I3)') i
   levnum=adjustl(levnum) 
   fmt =  '('//trim(levnum)//'(f12.7))' 
   
-  write(31,trim(fmt)) levs
+  write(31,trim(fmt)) levs(1:i)
  
 end subroutine
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
@@ -368,10 +371,10 @@ logical function check_conv(TDA,OLD,H,hold)
         difference = &
         abs(TDA%blkM(q)%Eigval(i) - OLD%blkM(q)%Eigval(i))
         if (TDA%blkM(q)%Eigval(i) < -4*H%E0) failure = .true.
-        if (difference < 1e-4) then
+        if (difference < 1e-6) then
            passing = passing + 1
            OLD%blkM(q)%extra(i) = 10. 
-        else if (difference < 1e-3) then 
+        else if (difference < 1e-5) then 
            OLD%blkM(q)%extra(i) = 10. 
         end if 
      end do

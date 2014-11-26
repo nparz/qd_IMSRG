@@ -7,7 +7,7 @@ p4 = gs_decouple
 p5 = ex_decouple
 
 FFLAGS =  -O3 -fbounds-check -fopenmp  #-CB #-check all
-TFLAGS =  -g  
+TFLAGS =  -g -fstack-usage -fopenmp
 
 LIBS =  -L/user/local/lib/ -llapack -lblas
 
@@ -71,4 +71,5 @@ clean:
 	rm -f *.o
 	rm -f *.mod
 	rm -f *~
+	rm -f *.su
 

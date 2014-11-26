@@ -28,9 +28,9 @@ subroutine build_TDAmat(H,TDA)
 !  do Ms = -2,2,2
  !    do Ml = -lmax,lmax
         
-        TDA%blkM(q)%lmda(1) = Ml
-        TDA%blkM(q)%lmda(2) = Ms
-        q=q+1
+        TDA%blkM(q)%lmda(1) =H%Mltarg
+        TDA%blkM(q)%lmda(2) =H%Mstarg
+  !      q=q+1
    
         
   !   end do 
@@ -39,7 +39,7 @@ subroutine build_TDAmat(H,TDA)
   TDA%map = 0
   !find the dimension
   do i=1,n
-     do a=n+1,12 ! max out at 12 (valence space) 
+     do a=n+1,H%cutshell ! max out at H%cutshell (valence space) 
               
          li = H%states(H%eh(i),2)
          si = H%states(H%eh(i),3)
@@ -49,7 +49,7 @@ subroutine build_TDAmat(H,TDA)
          Ml = la-li
          Ms = sa-si 
          
-         if (( Ml == 0) .and. (Ms == 0)) then  
+         if (( Ml == H%Mltarg) .and. (Ms == H%Mstarg)) then  
          !q=Ml+lmax+1+(2*lmax+1)*(Ms+2)/2 
 !!this is the ordering established in the previous loop
          
@@ -71,7 +71,7 @@ subroutine build_TDAmat(H,TDA)
   
 !! fill it with states
   do i=1,n
-     do a=n+1,12
+     do a=n+1,H%cutshell
               
          li = H%states(H%eh(i),2)
          si = H%states(H%eh(i),3)
@@ -82,7 +82,7 @@ subroutine build_TDAmat(H,TDA)
          Ms = sa-si 
          
          !q=Ml+lmax+1+(2*lmax+1)*(Ms+2)/2          
-         if (( Ml == 0) .and. (Ms == 0))  then 
+         if (( Ml == H%Mltarg) .and. (Ms == H%Mstarg))  then 
          do d=1,TDA%map(1)
             if (TDA%blkM(1)%labels(d,1) == 0) then 
                TDA%blkM(1)%labels(d,1) = i

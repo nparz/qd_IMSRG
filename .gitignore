@@ -1,0 +1,15 @@
+*.[oa]
+*.mod
+#*
+*~
+*.log
+*.txt
+ex_decouple
+gs_decouple
+run_CI
+calc_TBME
+*.tar
+*.gz
+output/*
+TBMEfiles/*
+hamiltonians/*

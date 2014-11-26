@@ -43,7 +43,7 @@ type full_ham
    !!! ith state in ENERGY ORDER
    real(8) :: E0,h3(220,220)
    !!! 0-body flow energy
-   integer :: nblock,nbody,Msp,herm,neq 
+   integer :: nblock,nbody,Msp,herm,neq,cutshell,Mltarg,Mstarg 
    !!! number of blocks, bodies, sp states
    logical :: IMSRG3 
 end type full_ham
@@ -191,33 +191,35 @@ subroutine write_matrix_pretty(ETA,fname)
   close(47) 
 end subroutine 
 !====================================================
-subroutine export_hamiltonian(H) 
+subroutine export_hamiltonian(H,fname) 
   implicit none 
   
   integer :: i,j,n,m,q,np,nh,nb
   type(full_ham) :: H
+  character(50) :: fname
 
   n=H%nbody
   m=H%msp
 
-  open(unit=20,file='hamiltonian.dat')
+  open(unit=20,file='../hamiltonians/'//&
+       trim(adjustl(fname)),form='unformatted')
   
-  write(20,*) H%E0
+  write(20) H%E0
   do i=1,n
      do j=1,n
-        write(20,*) H%fhh(i,j)
+        write(20) H%fhh(i,j)
      end do 
   end do 
   
   do i=1,m-n
      do j=1,n
-        write(20,*) H%fph(i,j)
+        write(20) H%fph(i,j)
      end do 
   end do 
   
   do i=1,m-n
      do j=1,m-n
-        write(20,*) H%fpp(i,j)
+        write(20) H%fpp(i,j)
      end do 
   end do 
 
@@ -228,37 +230,37 @@ subroutine export_hamiltonian(H)
      
      do i=1,nh
         do j=1,nh
-           write(20,*) H%mat(q)%Vhhhh(i,j)
+           write(20) H%mat(q)%Vhhhh(i,j)
         end do 
      end do 
      
      do i=1,np
         do j=1,np
-           write(20,*) H%mat(q)%Vpppp(i,j)
+           write(20) H%mat(q)%Vpppp(i,j)
         end do 
      end do 
      
      do i=1,np
         do j=1,nh
-           write(20,*) H%mat(q)%Vpphh(i,j)
+           write(20) H%mat(q)%Vpphh(i,j)
         end do 
      end do 
      
      do i=1,nb
         do j=1,nb
-           write(20,*) H%mat(q)%Vphph(i,j)
+           write(20) H%mat(q)%Vphph(i,j)
         end do 
      end do 
      
      do i=1,nb
         do j=1,nh
-           write(20,*) H%mat(q)%Vphhh(i,j)
+           write(20) H%mat(q)%Vphhh(i,j)
         end do 
      end do 
      
      do i=1,np
         do j=1,nb
-           write(20,*) H%mat(q)%Vppph(i,j)
+           write(20) H%mat(q)%Vppph(i,j)
         end do 
      end do 
      
@@ -267,33 +269,35 @@ subroutine export_hamiltonian(H)
 close(20)
 end subroutine 
 !=========================================
-subroutine import_hamiltonian(H) 
+subroutine import_hamiltonian(H,fname) 
   implicit none 
   
   integer :: i,j,n,m,q,np,nh,nb
   type(full_ham) :: H
+  character(50) :: fname
 
   n=H%nbody
   m=H%msp
 
-  open(unit=20,file='hamiltonian.dat')
-  
-  read(20,*) H%E0
+  open(unit=20,file='../hamiltonians/'//&
+       trim(adjustl(fname)),form='unformatted')
+
+  read(20) H%E0
   do i=1,n
      do j=1,n
-        read(20,*) H%fhh(i,j)
+        read(20) H%fhh(i,j)
      end do 
   end do 
   
   do i=1,m-n
      do j=1,n
-        read(20,*) H%fph(i,j)
+        read(20) H%fph(i,j)
      end do 
   end do 
   
   do i=1,m-n
      do j=1,m-n
-        read(20,*) H%fpp(i,j)
+        read(20) H%fpp(i,j)
      end do 
   end do 
 
@@ -304,37 +308,37 @@ subroutine import_hamiltonian(H)
      
      do i=1,nh
         do j=1,nh
-           read(20,*) H%mat(q)%Vhhhh(i,j)
+           read(20) H%mat(q)%Vhhhh(i,j)
         end do 
      end do 
      
      do i=1,np
         do j=1,np
-           read(20,*) H%mat(q)%Vpppp(i,j)
+           read(20) H%mat(q)%Vpppp(i,j)
         end do 
      end do 
      
      do i=1,np
         do j=1,nh
-           read(20,*) H%mat(q)%Vpphh(i,j)
+           read(20) H%mat(q)%Vpphh(i,j)
         end do 
      end do 
      
      do i=1,nb
         do j=1,nb
-           read(20,*) H%mat(q)%Vphph(i,j)
+           read(20) H%mat(q)%Vphph(i,j)
         end do 
      end do 
      
      do i=1,nb
         do j=1,nh
-           read(20,*) H%mat(q)%Vphhh(i,j)
+           read(20) H%mat(q)%Vphhh(i,j)
         end do 
      end do 
      
      do i=1,np
         do j=1,nb
-           read(20,*) H%mat(q)%Vppph(i,j)
+           read(20) H%mat(q)%Vppph(i,j)
         end do 
      end do 
      
