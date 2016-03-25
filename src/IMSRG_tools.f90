@@ -451,10 +451,13 @@ subroutine allocate_everything(rec,r2)
   allocate(r2%eh(n)) 
   allocate(r2%ep(m-n))
   allocate(r2%stoe(m)) 
-  
+  allocate(r2%states(m,3))
+  r2%states = rec%states
   r2%stoe=rec%stoe
   r2%eh=rec%eh
   r2%ep=rec%ep
+  r2%mltarg = rec%mltarg
+  r2%mstarg = rec%mstarg
   
   allocate(r2%i_array(g,3))
   
@@ -504,11 +507,63 @@ subroutine allocate_everything(rec,r2)
   end if 
   
 end subroutine  
-!===================================================
+!========================================
+!========================================
+subroutine allocate_ex(rec,r2) 
+  implicit none 
+  
+  type(full_ham) :: rec,r2
+  integer :: i,n,m,m3,g,pp,hh
+  
+  n=rec%nbody
+  m=rec%Msp
+  m3 = m*(m-1)*(m-2)/6
+  g = m*(m-1)/2
+  r2%herm=1
+  r2%nbody=rec%nbody
+  r2%Msp=m
+  r2%neq = rec%neq 
+  allocate(r2%eh(n)) 
+  allocate(r2%ep(m-n))
+  allocate(r2%stoe(m)) 
+  allocate(r2%states(m,3))
+  r2%states = rec%states
+  r2%stoe=rec%stoe
+  r2%eh=rec%eh
+  r2%ep=rec%ep
+  r2%mltarg = rec%mltarg
+  r2%mstarg = rec%mstarg
+  
+  allocate(r2%i_array(g,3))
+  
+  r2%i_array=rec%i_array
 
+  allocate(r2%fph(m-n,n))
+  
+  r2%nblock=rec%nblock
+  allocate( r2%mat( 1 ) )
+  r2%fph=0.d0
 
+  pp = (m-n)*(m-n-1)/2 
+  hh = n*(n-1)/2 
+  
+  allocate(r2%mat(1)%Vpphh(pp,hh)) 
+  r2%mat(1)%Vpphh = 0.d0 
+  
+  r2%IMSRG3 = .false.
+  
+  if (rec%IMSRG3) then 
+     r2%IMSRG3 = .true.
+     allocate(r2%V3body(m3,m3))
+     allocate(r2%threemap(m3,3))
+     r2%threemap = rec%threemap
+  end if 
+  
+end subroutine  
 
 end module
+
+
 
 
 !=====================================================

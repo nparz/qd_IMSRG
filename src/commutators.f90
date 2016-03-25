@@ -2038,5 +2038,280 @@ subroutine xcommutator_133(r1,r2,r3)
      end do 
   end do
 end subroutine
+!==================================================
+!==================================================
+real(8) function HQ_comm_1b(a,i,H,Q) 
+  implicit none 
+  
+  integer :: a,i,b,j,N,M,c,k
+  type(full_ham) :: H,Q 
+  real(8) :: sm 
+  
+  sm = 0.d0 
+  
+  N = H%Nbody
+  M = H%Msp
+
+!11->1  
+  do b = N+1,M
+     sm = sm + f_elem(a,b,H) * Qf_elem(b,i,Q)
+
+  end do
+  
+  do j = 1,N
+     sm = sm - Qf_elem(a,j,Q) *f_elem(j,i,H) 
+  end do 
+  
+   do b = N+1,M
+      do j = 1, N
+ ! 12 -> 1         
+         sm = sm + f_elem(j,b,H) * Q_elem(a,b,i,j,Q)
+
+ ! 21 -> 1 
+         sm = sm + Qf_elem(b,j,Q) * V_elem(a,j,i,b,H) 
+     end do
+   end do 
+
+!22 -> 1
+  do b = N+1,M
+     do c = b+1,M 
+        do j = 1, N
+           sm = sm + Q_elem(c,b,i,j,Q) * V_elem(a,j,c,b,H)           
+        end do
+     end do
+  end do
+
+  do b = N+1,M
+     do k = 1,N 
+        do j = k+1,N
+           sm = sm - Q_elem(a,b,k,j,Q) * V_elem(k,j,i,b,H)             
+        end do
+     end do
+  end do
+
+  HQ_comm_1b = sm
+
+end function 
+!==================================================
+!==================================================
+real(8) function HQ_comm_2b(a,b,i,j,H,Q) 
+  implicit none 
+  
+  integer :: a,i,b,j,N,M,c,k,l,d
+  type(full_ham) :: H,Q 
+  real(8) :: sm 
+  
+  sm = 0.d0 
+  
+  N = H%Nbody
+  M = H%Msp
+
+
+ ! 12->2  
+  do c = N+1,M
+     sm = sm + f_elem(a,c,H) * Q_elem(c,b,i,j,Q) - &
+          f_elem(b,c,H) * Q_elem(c,a,i,j,Q) 
+     sm = sm + Qf_elem(c,i,Q) * V_elem(a,b,c,j,H) - &
+          Qf_elem(c,j,Q) * V_elem(a,b,c,i,H)
+  end do
+
+  do k = 1,N
+     sm = sm - Q_elem(a,b,k,j,Q) *f_elem(k,i,H)  + &
+          Q_elem(a,b,k,i,Q) *f_elem(k,j,H) 
+     sm = sm - V_elem(b,k,j,i,H) *Qf_elem(a,k,Q) + &
+          V_elem(a,k,j,i,H) *Qf_elem(b,k,Q)
+  end do 
+
+ !22 -> 2
+  
+  do c = N+1,M
+     do d = c+1,M
+        sm = sm + V_elem(a,b,c,d,H) * Q_elem(c,d,i,j,Q)
+     end do
+  end do 
+
+  do k = 1,N
+     do l = k+1,N
+        
+        sm = sm + V_elem(k,l,i,j,H) * Q_elem(a,b,k,l,Q)
+     end do 
+  end do 
+
+  do k = 1, N
+     do c = N+1,M
+        
+        sm = sm - V_elem(b,k,c,i,H) * Q_elem(a,c,k,j,Q) 
+        sm = sm + V_elem(a,k,c,i,H) * Q_elem(b,c,k,j,Q) 
+        sm = sm + V_elem(b,k,c,j,H) * Q_elem(a,c,k,i,Q) 
+        sm = sm - V_elem(a,k,c,j,H) * Q_elem(b,c,k,i,Q) 
+        
+      end do 
+   end do 
+
+  HQ_comm_2b = sm
+
+end function 
+
+!==================================================
+!==================================================
+real(8) function HQ_comm_1p(a,H,v) 
+  implicit none 
+  
+  integer :: a,i,b,j,N,M,c,k
+  type(full_ham) :: H
+  real(8) :: sm 
+  real(8),dimension(:) :: v
+  
+  N = H%nbody
+  M = H%msp
+  sm = 0.d0 
+  
+  do b = N+1,M
+     sm = sm + f_elem(a,b,H)*get_X1(b,v,H)
+  end do 
+  
+  do b =N+1,M
+     do i = 1,N
+        sm = sm + f_elem(i,b,H)*get_X3(a,b,i,v,H)
+     end do 
+  end do 
+  
+  do b = N+1,M
+     do c = b+1,M
+        do i = 1,N
+           sm = sm + v_elem(a,i,b,c,H)*get_X3(b,c,i,v,H) 
+        end do 
+     end do
+  end do
+           
+  HQ_comm_1p = sm
+
+end function HQ_comm_1p
+!==================================================
+!==================================================
+real(8) function HQ_comm_1h(i,H,v) 
+  implicit none 
+  
+  integer :: a,i,b,j,N,M,c,k
+  type(full_ham) :: H
+  real(8) :: sm 
+  real(8),dimension(:) :: v
+  
+  N = H%nbody
+  M = H%msp
+  sm = 0.d0 
+  
+  do j = 1,N
+     sm = sm - f_elem(j,i,H)*get_X1(j,v,H)
+  end do 
+  
+  do b =N+1,M
+     do j = 1,N
+        sm = sm + f_elem(j,b,H)*get_X3(j,i,b,v,H)
+     end do 
+  end do 
+  
+  do j = 1,N
+     do k = j+1,N
+        do b = N+1,M
+           sm = sm + v_elem(j,k,i,b,H)*get_X3(j,k,b,v,H) 
+        end do 
+     end do
+  end do
+           
+  HQ_comm_1h = sm
+
+end function HQ_comm_1h
+!==================================================
+!==================================================
+real(8) function HQ_comm_2p1h(a,b,i,H,v) 
+  implicit none 
+  
+  integer :: a,i,b,j,N,M,c,k,l,d
+  type(full_ham) :: H 
+  real(8) :: sm 
+  real(8),dimension(:) :: v
+  
+  N = H%nbody
+  M = H%msp
+  sm = 0.d0 
+  
+  do c = N+1,M
+     sm = sm + v_elem(a,b,c,i,H)*get_X1(c,v,H) &
+          + f_elem(a,c,H)*get_X3(c,b,i,v,H) &
+          - f_elem(b,c,H)*get_X3(c,a,i,v,H)
+  end do 
+  
+  do j = 1, N
+     sm = sm - f_elem(j,i,H)*get_X3(a,b,j,v,H)
+  end do 
+  
+  do c = N+1,M
+     do d = c+1,M
+        sm = sm + v_elem(a,b,c,d,H)*get_X3(c,d,i,v,H)
+     end do 
+  end do 
+  
+  do c = N+1,M 
+     do j = 1, N
+        
+        sm = sm - v_elem(a,j,c,i,H)*get_X3(c,b,j,v,H)&
+             + v_elem(b,j,c,i,H)*get_X3(c,a,j,v,H)
+     end do 
+  end do 
+
+  HQ_comm_2p1h = sm 
+
+end function HQ_comm_2p1h
+
+
+
+
+!==================================================
+!==================================================
+real(8) function HQ_comm_2h1p(i,j,a,H,v) 
+  implicit none 
+  
+  integer :: a,i,b,j,N,M,c,k,l,d
+  type(full_ham) :: H 
+  real(8) :: sm 
+  real(8),dimension(:) :: v
+  
+  N = H%nbody
+  M = H%msp
+  sm = 0.d0 
+  
+  do k = 1,N
+     sm = sm - v_elem(k,a,j,i,H)*get_X1(k,v,H) &
+          - f_elem(k,i,H)*get_X3(k,j,a,v,H) &
+          + f_elem(k,j,H)*get_X3(k,i,a,v,H)
+  end do 
+  
+  do b = N+1, M
+     sm = sm + f_elem(a,b,H)*get_X3(i,j,b,v,H)
+  end do 
+  
+  do k = 1,N
+     do l = k+1,N
+        sm = sm + v_elem(k,l,j,i,H)*get_X3(k,l,a,v,H)
+     end do 
+  end do 
+  
+  do b = N+1,M 
+     do k = 1, N
+        
+        sm = sm - v_elem(k,a,b,j,H)*get_X3(k,i,b,v,H)&
+             + v_elem(k,a,b,i,H)*get_X3(k,j,b,v,H)
+     end do 
+  end do 
+
+  HQ_comm_2h1p = sm 
+
+end function 
+
+  
+
+  
+  
 end module
 

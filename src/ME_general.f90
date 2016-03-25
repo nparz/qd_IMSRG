@@ -656,10 +656,10 @@ subroutine get_ints(ints,hw,qn,m)
            p3=ints%mat(q)%qnpp(JJ,1)
            p4=ints%mat(q)%qnpp(JJ,2)
            
-      ints%mat(q)%Vpppp(II,JJ)  = v_int( qn(p1,1:3) , qn(p2,1:3),   &
+      ints%mat(q)%Vpppp(II,JJ)  = (v_int( qn(p1,1:3) , qn(p2,1:3),   &
                   qn(p4,1:3) , qn(p3,1:3) , hw ) - &
                      v_int( qn(p1,1:3) , qn(p2,1:3),   &
-                  qn(p3,1:3) , qn(p4,1:3) , hw )       
+                  qn(p3,1:3) , qn(p4,1:3) , hw ))*.0001       
             
         end do 
      end do 
@@ -670,10 +670,10 @@ subroutine get_ints(ints,hw,qn,m)
         p1=ints%mat(q)%qnpp(II,1)
         p2=ints%mat(q)%qnpp(II,2)
    
-        ints%mat(q)%Vpppp(II,II) = v_int( qn(p1,1:3) , qn(p2,1:3),   &
+        ints%mat(q)%Vpppp(II,II) = (v_int( qn(p1,1:3) , qn(p2,1:3),   &
                   qn(p2,1:3) , qn(p1,1:3) , hw ) - &
                   v_int( qn(p1,1:3) , qn(p2,1:3),   &
-                  qn(p1,1:3) , qn(p2,1:3) , hw )
+                  qn(p1,1:3) , qn(p2,1:3) , hw ))*.0001
      end do 
   
   end do 
@@ -1109,6 +1109,199 @@ subroutine new_COEFS(c,w,m,rec)
   end do 
  
 end subroutine
+!=====================================================
+!=====================================================  
+real(8) function Q_elem(a,b,c,d,Q)
+  implicit none 
+  
+  integer :: a,b,c,d,N,PP,HH ,Msp
+  integer :: ax,bx,cx,dx,pre
+  type(full_ham) :: Q 
+  
+  N = Q%nbody
+  Msp = Q%msp
+
+  if ((a ==b ) .or. (c==d)) then 
+     Q_elem = 0.d0 
+     return
+  end if
+  if ( a .le. N ) then 
+     Q_elem = 0.d0
+     return
+  end if 
+  if ( b .le. N ) then 
+     Q_elem = 0.d0
+     return
+  end if 
+  if ( c > N ) then 
+     Q_elem = 0.d0
+     return
+  end if 
+  if ( d > N ) then 
+     Q_elem = 0.d0
+     return
+  end if 
+
+  if (a > b ) then 
+     ax = b
+     bx = a 
+     pre =  -1
+  else
+     ax = a
+     bx = b
+     pre = 1
+  end if
+  
+  if (c > d ) then 
+     cx = d
+     dx = c 
+     pre =  -1*pre
+  else
+     cx = c
+     dx = d
+     pre = 1*pre
+  end if
+  
+  PP = fermionic_tp_index(ax-N,bx-N,Msp-N) 
+  HH = fermionic_tp_index(cx,dx,N) 
+
+  Q_elem = Q%mat(1)%Vpphh(PP,HH)*pre 
+  
+end function
+!=====================================================
+!=====================================================  
+real(8) function get_X1(a,vec,rec)
+  ! use energy ordering
+  implicit none 
+  
+  integer :: a,holes
+  type(full_ham) :: rec
+  real(8),dimension(:) :: vec
+  
+  holes = rec%nbody
+  if (a>holes) then 
+     get_X1 = vec(a-holes) 
+  else
+     get_X1 = vec(a) 
+  end if 
+end function  
+!=====================================================
+!=====================================================  
+real(8) function get_X3(ax,bx,i,vec,rec)
+  ! use energy ordering
+  implicit none 
+  
+  integer :: a,b,i,ax,bx,parts,holes,AA,N,phase 
+  type(full_ham) :: rec
+  real(8),dimension(:) :: vec
+
+  if (ax==bx) then 
+     get_X3=0.d0
+     return
+  end if 
+  N = rec%msp 
+  holes = rec%nbody
+  parts = N-holes
+  if (i>holes) then
+     if (ax>bx) then 
+        a = bx
+        b = ax
+        phase = -1
+     else
+        a = ax
+        b = bx 
+        phase = 1
+     end if 
+     AA = fermionic_tp_index(a,b,holes)
+     get_X3 = vec((AA-1)*parts+i)*phase
+  else
+     if (ax>bx) then 
+        a = bx
+        b = ax
+        phase = -1
+     else
+        a = ax
+        b = bx 
+        phase = 1
+     end if 
+     AA = fermionic_tp_index(a-holes,b-holes,parts)
+     get_X3 = vec(parts+(AA-1)*holes+i)*phase
+  end if 
+end function 
+!=====================================================
+!=====================================================  
+subroutine place_X1(a,vec,rec,inpt)
+  ! use energy ordering
+  implicit none 
+  
+  integer :: a,holes
+  type(full_ham) :: rec
+  real(8),dimension(:) :: vec
+  real(8) :: inpt
+  
+  holes = rec%nbody
+  if (a>holes) then 
+     vec(a-holes) =  inpt
+  else
+     vec(a) = inpt 
+  end if 
+end subroutine place_X1
+!=====================================================
+!=====================================================  
+subroutine place_X3(ax,bx,i,vec,rec,inpt)
+  ! use energy ordering
+  implicit none 
+  
+  integer :: a,b,i,ax,bx,parts,holes,AA,N,phase 
+  type(full_ham) :: rec
+  real(8),dimension(:) :: vec
+  real(8) :: inpt
+  
+  if (ax==bx) return
+  N = rec%msp 
+  holes = rec%nbody
+  parts = N-holes
+  if (i>holes) then
+     if (ax>bx) then 
+        a = bx
+        b = ax
+        phase = -1
+     else
+        a = ax
+        b = bx 
+        phase = 1
+     end if 
+     AA = fermionic_tp_index(a,b,holes)
+     vec((AA-1)*parts+i) = inpt*phase 
+  else
+     if (ax>bx) then 
+        a = bx
+        b = ax
+        phase = -1
+     else
+        a = ax
+        b = bx 
+        phase = 1
+     end if 
+     AA = fermionic_tp_index(a-holes,b-holes,parts)
+     vec(parts+(AA-1)*holes+i) = inpt*phase 
+  end if 
+end subroutine place_X3
+!=====================================================
+!=====================================================  
+integer function fermionic_tp_index(i,j,n)
+  ! n is total number of sp states
+  ! assume i < j 
+  implicit none 
+  
+  integer :: i,j,n
+  
+  fermionic_tp_index = n*(i-1) + (i-i*i)/2 + j - i 
+  
+end function 
+!===================================================== 
+!=====================================================  
+
 !==============================================
 subroutine new_VMAT(ints,rec,m) 
   ! transform matrix elements into HF basis
@@ -1583,6 +1776,41 @@ real(8) function f_elem(a,b,rec)
 
 end function 
 !==============================================
+!==============================================  
+real(8) function Qf_elem(a,b,rec) 
+  implicit none 
+  
+  integer :: a,b,n
+  type(full_ham) :: rec
+  logical :: f1,f2
+
+  n=rec%nbody
+  if ( a .le. n ) then 
+     if ( b .le. n ) then 
+        
+        qf_elem = 0.d0 
+       
+     else 
+        
+        qf_elem = 0.d0 
+       
+     end if 
+
+   else 
+
+     if ( b .le. n ) then 
+        
+        qf_elem = rec%fph(a-n,b) 
+       
+     else 
+        
+        qf_elem = 0.d0
+       
+     end if 
+     
+   end if 
+
+end function 
 !=================================================
 !=================================================
 subroutine vectorize(rec,vout,neq)

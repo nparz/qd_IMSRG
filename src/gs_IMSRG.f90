@@ -8,21 +8,23 @@ program gs_IMSRG
   use commutators   !!! general modular derivs
   use operators    !!! various observables (TDA,density) 
   use adams_ode   !!! diff-eq solver
+  use EOM_IMSRG !!! lanczos solver
   implicit none
 
   real(8),parameter ::  conv_criteria = 1e-7
-  integer :: n,emax,m,g,ghol,gpart,i,j,k,l,a,b,rx(2,3),pr,q,nh,np,nb
+  integer :: n,emax,m,g,ghol,gpart,i,j,k,l,a,b,rx(2,3),pr,q,nh,np,nb,numstates
   integer :: p1,p2,h3,h4,h1,h2,p3,p4,neq,iwork(5),flag,info,js,m3,block_index
   real(8),allocatable,dimension(:,:) :: coefs
   real(8),allocatable,dimension(:) :: cur_vec,d_vec,work2,ex_en
   real(8) :: hw,eHF,e2nd,HF_E2,MBPT2,ex,ex2,time,time2,s,rel,abse,crit,trc
   real(8) :: omp_get_wtime,nrm1,nrm2,stp,ocrit,s_off,stp0,sm,sm2,sm3,sm4
-  real(8) :: get_crit
+  real(8) :: get_crit,pert
   type(full_ham) :: HS,ETA , HD, w1,w2,H0
   type(full_sp_block_mat) :: TDA,OLD
   character(5) :: hwstr,nstr,emaxstr,mlstr,msstr,cutstr
   character(2) :: nhs,nps,nbs
   character(7) :: genstr
+  character(9) :: pstr
   logical :: test,check_conv,run_tda
   external :: dGam
 !=================================================================
@@ -35,7 +37,8 @@ call getarg(2,hwstr)
 call getarg(3,emaxstr)
 call getarg(4,mlstr)
 call getarg(5,msstr) 
-call getarg(6,cutstr) 
+call getarg(6,cutstr)
+call getarg(7,pstr)  
 
 If ( len(trim(adjustl(mlstr)))* len(trim(adjustl(msstr))) &
      * len(trim(adjustl(cutstr))) > 0 ) then 
@@ -63,9 +66,12 @@ emaxstr = adjustl(emaxstr)
 !=================================================================
 !!! construct HF basis
   allocate(coefs(m,m))
-
-  call construct_two_particle_HF_basis( n , hw , emax , HS, coefs )
-  
+  If ( len(trim(adjustl(pstr))) > 0 ) then 
+     read(pstr,'(f9.6)') pert
+     call construct_two_particle_HF_basis( n , hw , emax , HS, coefs ,pert)
+  else
+     call construct_two_particle_HF_basis( n , hw , emax , HS, coefs )
+  end if 
   eHF=HF_E2( HS )
   e2nd = eHF +MBPT2( HS )   
   print*, 'Hartree-Fock Energy: ', eHF
@@ -132,7 +138,10 @@ end if
      call diagonalize_blocks(TDA) 
      call write_spec
   end if 
-  
+
+   print*, 'CI:', s
+!   call run_simple_CI('y')
+
   pr = 1
   do while (crit > conv_criteria) 
  
@@ -151,16 +160,24 @@ end if
      crit = abs( (crit - HS%E0 )/crit ) 
      write(*,'(I5,3(e14.6))') pr,s,HS%E0,crit
      pr = pr + 1 
-   !  if (pr == 5) then
-  !      print*, 'CI:', s
-    !call run_simple_CI('n')
-   !  pr = 0 
-    ! end if 
+    !  if (pr == 5) then
+    !     print*, 'CI:', s
+    ! call run_simple_CI('n')
+    !  pr = 0 
+    !  end if 
   !call print_matrix(HS%fph)
   end do
-   
+    
+  print*, 'CI:', s
+!  call run_simple_CI('y') 
   print*, 'final s:', s
-       
+
+  numstates = 2
+
+  !call calculate_excited_states( HS%Mltarg, HS%Mstarg, numstates , HS ) 
+  call calculate_1p_attached( HS%Mltarg, HS%Mstarg, numstates , HS ) 
+
+  call calculate_1h_removed( HS%Mltarg, HS%Mstarg, numstates , HS ) 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !=================================================================
 !================================================================

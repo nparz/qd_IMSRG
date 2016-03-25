@@ -2,11 +2,11 @@ program simple_shell_model
   ! generic no core shell model code
   implicit none 
   
-  integer :: m,n,R,RP,nx,M2b,i,j,info,emax,ml,ms
-  real(8),allocatable,dimension(:,:) :: H,T,V,perc
-  real(8),allocatable,dimension(:) :: eig,dwork,SD,SDpair
+  integer :: m,n,R,RP,nx,M2b,i,j,info,emax,ml,ms,nstates
+  real(8),allocatable,dimension(:,:) :: H,T,V,perc,vecs
+  real(8),allocatable,dimension(:) :: eig,dwork,SD,SDpair,vals
   integer,allocatable,dimension(:,:) :: qn
-  integer,allocatable,dimension(:) :: ord 
+  integer,allocatable,dimension(:) :: ord
   character(5) :: rstr,nstr,emaxstr,mlstr,msstr
   character(10) :: sstr,offstr
   character(1) :: yes,evecs
@@ -72,23 +72,38 @@ program simple_shell_model
 
   t1 = omp_get_wtime()
   call construct_H(SD,H,T,V,R,m,M2b,N)    
-  t2 = omp_get_wtime()
  
-  call dsyev('V','U',R,H,R,eig,dwork,10*R,info) 
+  t2 = omp_get_wtime()
   
+  
+  if (emax > 3) then     
+     print*, 'via lanczos',R
+     nstates = 10 
+     allocate(vecs(R,nstates),vals(nstates))  
+     call lanczos(H,vecs,vals,R,nstates)      
+    
+  else     
+     nstates = R
+     call dsyev('V','U',R,H,R,eig,dwork,10*R,info) 
+     vecs = H(:,1:nstates)
+     vals = eig(1:nstates) 
+  end if
+  
+
   t1 = omp_get_wtime()
  
+  print*, t1 - t2, 'time'
   if (evecs == 'y') then 
-     call find_percentages(SD,H,N,R,M,perc)
+     call find_percentages(SD,vecs,N,R,M,perc,nstates)
      open(unit=37,file = 'level_percentages.dat') 
      do i =1,R
-        write(37,*) perc(i,:)
+        write(37,*) perc(i,1:3)
      end do 
      close(37)
   end if
   
   open(unit = 38,file = 'CI_spectrum.dat',position='append') 
-      write(38,*) s, offset+eig 
+      write(38,*) s, offset+vals(1:10) 
   close(38) 
   
 end program
@@ -475,13 +490,13 @@ subroutine restrict_to_qns(SD,SD_PAIR,M,N,R,R_P,qn,emax,ml,ms)
   R_P = k-1
 end subroutine 
 !===========================================
-subroutine find_percentages(SD,H,N,R,M,perc) 
+subroutine find_percentages(SD,H,N,R,M,perc,ns) 
   ! calculates the percentages of the states which 
   ! correspond to different levels of excitation
   implicit none
   
-  integer :: R,N,M,i,j,level(R),kx
-  real(8) :: SD(R),perc(R,N+1),H(R,R)
+  integer :: R,N,M,i,j,level(R),kx,ns
+  real(8) :: SD(R),perc(R,N+1),H(R,ns) 
   integer,dimension(M) :: bin
   
   ! figure out which SDs are which npnh excitation levels
@@ -493,7 +508,7 @@ subroutine find_percentages(SD,H,N,R,M,perc)
   
   ! calculate percentages
   perc = 0.d0
-  do i = 1, R
+  do i = 1, ns
      do j = 1, R
         perc(i,level(j)+1) = perc(i,level(j)+1) + &
              H(j,i)**2
@@ -594,4 +609,102 @@ do R = 1, maxE
    end do 
 end do 
      
+end subroutine 
+
+subroutine lanczos( mat , vecs,vals,N,nev ) 
+  ! mat is the matrix
+  ! vecs are the eigenvectors
+  ! vals are the eigenvalues 
+  ! nvecs is how many converged eigenvalues you want  
+  implicit none 
+
+  integer :: N 
+  integer,intent(in) :: nev
+  real(8),dimension(N,N) :: mat 
+  real(8),dimension(N,nev) :: vecs
+  real(8),dimension(nev) :: vals
+  real(8),allocatable,dimension(:) :: workl,eigs,resid,work,workD
+  real(8),allocatable,dimension(:,:) :: V
+  integer :: i,j,ix,jx,lwork,info,ido,ncv,ldv,iparam(11),ipntr(11),q,II,JJ
+  integer :: ishift,mxiter,nb,nconv,mode,np,lworkl,ldz,p,h,sps,tps,jp,jh
+  integer :: li,lj,lb,la,si,sj,sa,sb,Ml,Ms,h1,h2,p1,p2,a,b
+  real(8) ::  x,tol,y,sigma,t1,t2
+  character(1) :: BMAT,HOWMNY 
+  character(2) :: which
+  logical :: rvec
+  logical,allocatable,dimension(:) :: selct
+
+  N = size(mat(:,1)) ! size of the vector
+  ido = 0  ! status integer is 0 at start
+  BMAT = 'I' ! standard eigenvalue problem (N for generalized) 
+  which = 'SM' ! compute smallest eigenvalues in magnitude ('SA') is algebraic. 
+  tol = 0.0E+00 ! error tolerance? (wtf zero?) 
+  info = 0
+  ncv = 5*nev ! number of lanczos vectors I guess (size of the krylov space? ) 
+  lworkl = ncv*(ncv+8)  
+  allocate(V(N,NCV),workl(lworkl))
+  LDV = N  
+  ishift = 1
+  mxiter = 500 
+  mode = 1
+
+  allocate(eigs(N),resid(N),work(10*N),workD(3*N)) 
+  
+  iparam(1) = ishift
+  iparam(3) = mxiter
+  iparam(7) = mode
+  i = 0
+
+  do 
+     ! so V is the krylov subspace matrix that is being diagonalized
+     ! it does not need to be initialized, so long as you have the other 
+     ! stuff declared right, the code should know this.
+
+     call dsaupd ( ido, bmat, N, which, nev, tol, resid, &
+      ncv, v, ldv, iparam, ipntr, workd, workl, &
+      lworkl, info )
+
+     ! The actual matrix only gets multiplied with the "guess" vector in "matvec_prod" 
+    
+     i=i+1 
+     !print*, i
+    if ( ido /= -1 .and. ido /= 1 ) then
+      exit
+    end if
+
+    call matvec_prod(N,mat,workd(ipntr(1)), workd(ipntr(2)) ) 
+    
+    end do 
+  
+    ! the ritz values are out of order right now. Need to do post
+    ! processing to fix this, and get the eigenvectors
+    rvec= .true. 
+    howmny = 'A'
+  
+    allocate(selct(NCV)) 
+    ldz = N  
+    call dseupd( rvec, howmny, selct, vals, vecs, ldv, sigma, &
+         bmat, n, which, nev, tol, resid, ncv, v, ldv, &
+         iparam, ipntr, workd, workl, lworkl, info )
+  
+
+end subroutine 
+
+
+subroutine matvec_prod(N,mat,v,w) 
+  implicit none 
+  
+  integer :: N ,i,j
+  real(8),dimension(N) :: v,w 
+  real(8),dimension(N,N) :: mat
+  
+  w = 0.d0 
+!$OMP PARALLEL DO SHARED(mat,v,w,N) PRIVATE(i,j)
+  do j = 1, N
+     do i = 1, N          
+        w(j) = w(j) + mat(j,i)*v(i) 
+     end do 
+  end do 
+!$OMP END PARALLEL DO 
+
 end subroutine 

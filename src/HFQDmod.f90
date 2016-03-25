@@ -6,7 +6,7 @@ module HFQDmod
 
 contains  
   
-subroutine construct_two_particle_HF_BASIS( n , hw , emax , record ,coefs) 
+subroutine construct_two_particle_HF_BASIS( n , hw , emax , record ,coefs,pert) 
   use ME_general
   implicit none 
   
@@ -25,6 +25,7 @@ subroutine construct_two_particle_HF_BASIS( n , hw , emax , record ,coefs)
   real(8),allocatable,dimension(:,:) :: T,V,H,F,den
   real(8),allocatable,dimension(:) :: eold,ord,work,eig
   real(8) :: hw,crit,MBPT2,HF_E2,eHF
+  real(8), optional :: pert
   character(5) :: hwstr,nstr,emaxstr
   character(35) :: fname
   type(full_ham) :: record,ints
@@ -105,6 +106,9 @@ subroutine construct_two_particle_HF_BASIS( n , hw , emax , record ,coefs)
                 
            end do 
         end do 
+        if (present(pert)) then 
+           ints%mat(q)%Vpppp=pert*ints%mat(q)%Vpppp
+        end if 
      end do 
      
      close(37)
