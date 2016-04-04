@@ -304,7 +304,7 @@ subroutine LANCZOS_1p_ATTACHED(OP,nev,dm,d,norm_1p)
      ! scalar operator
   tps = 0 
 
-  do a = 1,p
+  do a = 1,p-1
      do b = a+1,p
         do i = 1, h
 
@@ -335,7 +335,7 @@ subroutine LANCZOS_1p_ATTACHED(OP,nev,dm,d,norm_1p)
   
   ido = 0  ! status integer is 0 at start
   BMAT = 'I' ! standard eigenvalue problem (N for generalized) 
-  which = 'SM' ! compute smallest eigenvalues in magnitude ('SA') is algebraic. 
+  which = 'SA' ! compute smallest eigenvalues in magnitude ('SA') is algebraic. 
   tol = 0.0E+00 ! error tolerance? (wtf zero?) 
   info = 0
   ncv = 2*nev ! number of lanczos vectors I guess
@@ -374,9 +374,15 @@ subroutine LANCZOS_1p_ATTACHED(OP,nev,dm,d,norm_1p)
      call matvec_1p_attached(N,dm,OP,workd(ipntr(1)), workd(ipntr(2)) ) 
   
   end do
+  
   write(6,*) 
-
-   
+  print*, 'donzo:',info 
+  print*, workl(ipntr(6):ipntr(6)+3)
+  print*
+  do i = 1,N
+     write(*,'(4(f12.7))') V(i,:)
+  end do
+  
   ! the ritz values are out of order right now. Need to do post
   ! processing to fix this, and get the eigenvectors
   rvec= .true. 
@@ -411,8 +417,8 @@ subroutine LANCZOS_1h_REMOVED(OP,nev,dm,d,norm_1p)
   integer :: ishift,mxiter,nb,nconv,mode,np,lworkl,ldz,p,h,sps,tps,jp,jh
   integer :: li,lj,lb,la,si,sj,sa,sb,Ml,Ms,h1,h2,p1,p2,a,b,dm
   real(8) ::  x,tol,y,sigma,t1,t2
-  character(1) :: BMAT,HOWMNY 
-  character(2) :: which
+  character(1) :: BMAT,HOWMNY
+  character(2) :: which,ncvstr
   logical :: rvec
   logical,allocatable,dimension(:) :: selct
 
@@ -436,7 +442,7 @@ subroutine LANCZOS_1h_REMOVED(OP,nev,dm,d,norm_1p)
      ! scalar operator
   tps = 0 
 
-  do a = 1,h
+  do a = 1,h-1
      do b = a+1,h
         do i = 1, p
 
@@ -464,13 +470,13 @@ subroutine LANCZOS_1h_REMOVED(OP,nev,dm,d,norm_1p)
       
  
   N = sps + tps ! number of p and pph SDs 
-  print*, sps,tps
- ido = 0  ! status integer is 0 at start
+
+  ido = 0  ! status integer is 0 at start
   BMAT = 'I' ! standard eigenvalue problem (N for generalized) 
-  which = 'SM' ! compute smallest eigenvalues in magnitude ('SA') is algebraic. 
+  which = 'SA' ! compute smallest eigenvalues in magnitude ('SA') is algebraic. 
   tol = 0.0E+00 ! error tolerance? (wtf zero?) 
   info = 0
-  ncv = nev ! number of lanczos vectors I guess
+  ncv = 3*nev ! number of lanczos vectors I guess
   if (ncv > N ) STOP 'NCV greater than N'
   lworkl = ncv*(ncv+8) 
   allocate(V(N,NCV),workl(lworkl))
@@ -485,7 +491,9 @@ subroutine LANCZOS_1h_REMOVED(OP,nev,dm,d,norm_1p)
   iparam(3) = mxiter
   iparam(7) = mode
   i = 0
-
+  
+  write(ncvstr,'(I2)') ncv
+  
   do 
      ! so V is the krylov subspace matrix that is being diagonalized
      ! it does not need to be initialized, so long as you have the other 
@@ -494,21 +502,23 @@ subroutine LANCZOS_1h_REMOVED(OP,nev,dm,d,norm_1p)
      call dsaupd ( ido, bmat, N, which, nev, tol, resid, &
       ncv, v, ldv, iparam, ipntr, workd, workl, &
       lworkl, info )
+
      
      ! The actual matrix only gets multiplied with the "guess" vector in "matvec_prod" 
+     
      call progress_bar( i )
+     
      i=i+1 
 
      if ( ido /= -1 .and. ido /= 1 ) then
         exit
      end if
-     
+
      call matvec_1h_removed(N,dm,OP,workd(ipntr(1)), workd(ipntr(2)) ) 
   
   end do
   write(6,*) 
-
-   
+  
   ! the ritz values are out of order right now. Need to do post
   ! processing to fix this, and get the eigenvectors
   rvec= .true. 
@@ -653,7 +663,7 @@ subroutine matvec_1p_attached(N,dm,OP,v,w)
   h = OP%Nbody !holes
   p = OP%Msp-h  !particles
   allocate(vec(dm),vec_out(dm)) 
-  
+
   vec = 0.d0 
   call unwrap_1p(v,vec,OP,N,dm)
   ! now we have two full_ham operators which can be used with my commutator expressions. Noice. 
@@ -704,9 +714,10 @@ subroutine matvec_1p_attached(N,dm,OP,v,w)
         end do
      end do
   end do
-  
+ 
   ! Okay, now we have the "matrix vector product" So lets put it back in vector form:
   call rewrap_1p(w,vec_out,OP,N,dm)
+ 
 end subroutine matvec_1p_attached
 !======================================================================================
 !======================================================================================
@@ -732,11 +743,13 @@ subroutine matvec_1h_removed(N,dm,OP,v,w)
   h = OP%Nbody !holes
   p = OP%Msp-h  !particles
   allocate(vec(dm),vec_out(dm)) 
-  
+ 
   vec = 0.d0 
+  vec_out = 0.d0
   call unwrap_1h(v,vec,OP,N,dm)
   ! now we have two full_ham operators which can be used with my commutator expressions. Noice. 
 
+  
   do ix = 1,h                          
      
      la = Op%states(Op%eh(ix),2)
@@ -785,7 +798,9 @@ subroutine matvec_1h_removed(N,dm,OP,v,w)
   end do
   
   ! Okay, now we have the "matrix vector product" So lets put it back in vector form:
+
   call rewrap_1h(w,vec_out,OP,N,dm)
+  
 end subroutine matvec_1h_removed
 !======================================================================================
 !======================================================================================

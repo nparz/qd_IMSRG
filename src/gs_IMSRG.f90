@@ -105,7 +105,7 @@ emaxstr = adjustl(emaxstr)
 
  ! call system('rm CI_spectrum.dat') 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- ! call run_simple_CI('y') 
+  call run_simple_CI('n') 
 !  stop
 !!! set parameters for solver ~~~~~~~~~~~~~~~~~~~~~~~
   rel=1e-8       ! relative error
@@ -173,10 +173,9 @@ end if
   print*, 'final s:', s
 
   numstates = 2
-
+  
   !call calculate_excited_states( HS%Mltarg, HS%Mstarg, numstates , HS ) 
   call calculate_1p_attached( HS%Mltarg, HS%Mstarg, numstates , HS ) 
-
   call calculate_1h_removed( HS%Mltarg, HS%Mstarg, numstates , HS ) 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !=================================================================

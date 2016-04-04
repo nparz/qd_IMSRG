@@ -639,6 +639,7 @@ subroutine get_ints(ints,hw,qn,m)
   n = ints%nbody
   m = ints%msp
   
+!$OMP PARALLEL DO PRIVATE (np,ii,jj,p1,p2,p3,p4) shared(hw,ints) 
   do q = 1,ints%nblock
      
      np = ints%mat(q)%npp
@@ -659,7 +660,7 @@ subroutine get_ints(ints,hw,qn,m)
       ints%mat(q)%Vpppp(II,JJ)  = (v_int( qn(p1,1:3) , qn(p2,1:3),   &
                   qn(p4,1:3) , qn(p3,1:3) , hw ) - &
                      v_int( qn(p1,1:3) , qn(p2,1:3),   &
-                  qn(p3,1:3) , qn(p4,1:3) , hw ))*.0001       
+                  qn(p3,1:3) , qn(p4,1:3) , hw ))       
             
         end do 
      end do 
@@ -673,11 +674,11 @@ subroutine get_ints(ints,hw,qn,m)
         ints%mat(q)%Vpppp(II,II) = (v_int( qn(p1,1:3) , qn(p2,1:3),   &
                   qn(p2,1:3) , qn(p1,1:3) , hw ) - &
                   v_int( qn(p1,1:3) , qn(p2,1:3),   &
-                  qn(p1,1:3) , qn(p2,1:3) , hw ))*.0001
+                  qn(p1,1:3) , qn(p2,1:3) , hw ))
      end do 
   
   end do 
-
+!$OMP END PARALLEL DO
 end subroutine
 !======================================================      
 subroutine calc_h0(h0,hw,qn)
@@ -1774,7 +1775,26 @@ real(8) function f_elem(a,b,rec)
      
    end if 
 
-end function 
+ end function f_elem
+!==============================================  
+real(8) function T_elem(a,b,rec) 
+  implicit none 
+  
+  integer :: a,b,n,k
+  type(full_ham) :: rec
+  logical :: f1,f2
+  real(8) :: sm
+
+  n=rec%nbody
+  
+  sm = f_Elem(a,b,rec) 
+  do k = 1,n
+     sm = sm - v_Elem(a,k,b,k,rec)
+  end do 
+  
+  T_Elem= sm
+     
+end function T_elem
 !==============================================
 !==============================================  
 real(8) function Qf_elem(a,b,rec) 

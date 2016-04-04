@@ -2207,14 +2207,14 @@ real(8) function HQ_comm_1h(i,H,v)
   
   do b =N+1,M
      do j = 1,N
-        sm = sm + f_elem(j,b,H)*get_X3(j,i,b,v,H)
+        sm = sm + f_elem(j,b,H)*get_X3(i,j,b,v,H)
      end do 
   end do 
   
   do j = 1,N
      do k = j+1,N
         do b = N+1,M
-           sm = sm + v_elem(j,k,i,b,H)*get_X3(j,k,b,v,H) 
+           sm = sm + v_elem(j,k,b,i,H)*get_X3(j,k,b,v,H) 
         end do 
      end do
   end do
@@ -2282,9 +2282,9 @@ real(8) function HQ_comm_2h1p(i,j,a,H,v)
   sm = 0.d0 
   
   do k = 1,N
-     sm = sm - v_elem(k,a,j,i,H)*get_X1(k,v,H) &
-          - f_elem(k,i,H)*get_X3(k,j,a,v,H) &
-          + f_elem(k,j,H)*get_X3(k,i,a,v,H)
+     sm = sm + v_elem(a,k,i,j,H)*get_X1(k,v,H) &
+          - f_elem(k,j,H)*get_X3(i,k,a,v,H) &
+          + f_elem(k,i,H)*get_X3(j,k,a,v,H)
   end do 
   
   do b = N+1, M
@@ -2293,15 +2293,15 @@ real(8) function HQ_comm_2h1p(i,j,a,H,v)
   
   do k = 1,N
      do l = k+1,N
-        sm = sm + v_elem(k,l,j,i,H)*get_X3(k,l,a,v,H)
+        sm = sm + v_elem(k,l,i,j,H)*get_X3(k,l,a,v,H)
      end do 
   end do 
   
   do b = N+1,M 
      do k = 1, N
         
-        sm = sm - v_elem(k,a,b,j,H)*get_X3(k,i,b,v,H)&
-             + v_elem(k,a,b,i,H)*get_X3(k,j,b,v,H)
+        sm = sm - v_elem(a,k,b,i,H)*get_X3(k,j,b,v,H)&
+             + v_elem(a,k,b,j,H)*get_X3(k,i,b,v,H)
      end do 
   end do 
 

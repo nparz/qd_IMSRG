@@ -28,6 +28,14 @@ program simple_shell_model
   read(emaxstr,'(I5)') emax
   read(mlstr,'(I5)') ml
   read(msstr,'(I5)') ms
+
+  
+  print*, 'what is N?'
+  read*, n
+  print*, 'what is ml?'
+  read*, ml
+  print*, 'what is ms?'
+  read*, ms
   
   m = emax*(emax+1)
 
