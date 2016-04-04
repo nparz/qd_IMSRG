@@ -172,7 +172,7 @@ end if
 !  call run_simple_CI('y') 
   print*, 'final s:', s
 
-  numstates = 2
+  numstates = 5
   
   !call calculate_excited_states( HS%Mltarg, HS%Mstarg, numstates , HS ) 
   call calculate_1p_attached( HS%Mltarg, HS%Mstarg, numstates , HS ) 

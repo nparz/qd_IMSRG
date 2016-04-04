@@ -376,13 +376,7 @@ subroutine LANCZOS_1p_ATTACHED(OP,nev,dm,d,norm_1p)
   end do
   
   write(6,*) 
-  print*, 'donzo:',info 
-  print*, workl(ipntr(6):ipntr(6)+3)
-  print*
-  do i = 1,N
-     write(*,'(4(f12.7))') V(i,:)
-  end do
-  
+ 
   ! the ritz values are out of order right now. Need to do post
   ! processing to fix this, and get the eigenvectors
   rvec= .true. 
@@ -476,7 +470,7 @@ subroutine LANCZOS_1h_REMOVED(OP,nev,dm,d,norm_1p)
   which = 'SA' ! compute smallest eigenvalues in magnitude ('SA') is algebraic. 
   tol = 0.0E+00 ! error tolerance? (wtf zero?) 
   info = 0
-  ncv = 3*nev ! number of lanczos vectors I guess
+  ncv = 2*nev ! number of lanczos vectors I guess
   if (ncv > N ) STOP 'NCV greater than N'
   lworkl = ncv*(ncv+8) 
   allocate(V(N,NCV),workl(lworkl))
