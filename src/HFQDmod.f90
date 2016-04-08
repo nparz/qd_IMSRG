@@ -80,40 +80,40 @@ subroutine construct_two_particle_HF_BASIS( n , hw , emax , record ,coefs,pert)
 
   call reindex(Mbas, gbas, 0, 0, gbas, qnums, emax,eig,ints)
   call convertF(T,ints,mbas,qnums,eig)
-
-     write(hwstr,'(f5.2)') hw
-     write(nstr, '(i5)' ) n
-     write(emaxstr, '(i5)' ) emax
-        
+ 
+  write(hwstr,'(f5.2)') hw
+  write(nstr, '(i5)' ) n
+  write(emaxstr, '(i5)' ) emax
+  
      !!!! get matrix elements
+  
+  hwstr=adjustl(hwstr)
+  nstr=adjustl(nstr)
+  emaxstr=adjustl(emaxstr)
 
-     hwstr=adjustl(hwstr)
-     nstr=adjustl(nstr)
-     emaxstr=adjustl(emaxstr)
-              
-     fname='../TBMEfiles/TBME_'//trim(hwstr)//'_'//trim(emaxstr)//'.dat'
-     
-     fname=trim(fname) 
-    
-     open(unit=37,file=fname)
-    
-     do q=1,ints%nblock
-        allocate(ints%mat(q)%Vpppp(ints%mat(q)%npp,ints%mat(q)%npp))
-        do i=1,ints%mat(q)%npp
-           do j=1,ints%mat(q)%npp
-                  
-              read(37,*) ints%mat(q)%Vpppp(i,j)
-                
-           end do 
-        end do 
-        if (present(pert)) then 
-           ints%mat(q)%Vpppp=pert*ints%mat(q)%Vpppp
-        end if 
-     end do 
-     
-     close(37)
-     
-     !!! matrix elements are now available
+  fname='../TBMEfiles/TBME_'//trim(hwstr)//'_'//trim(emaxstr)//'.dat'
+
+  fname=trim(fname) 
+
+  open(unit=37,file=fname)
+
+  do q=1,ints%nblock
+     allocate(ints%mat(q)%Vpppp(ints%mat(q)%npp,ints%mat(q)%npp))
+     do i=1,ints%mat(q)%npp
+        do j=1,ints%mat(q)%npp
+
+           read(37,*) ints%mat(q)%Vpppp(i,j)
+
+        end do
+     end do
+     if (present(pert)) then 
+        ints%mat(q)%Vpppp=pert*ints%mat(q)%Vpppp
+     end if
+  end do
+
+  close(37)
+
+!!! matrix elements are now available
 
   eig=0.d0
   crit=1.d0
@@ -121,15 +121,14 @@ subroutine construct_two_particle_HF_BASIS( n , hw , emax , record ,coefs,pert)
   coefs=0.d0
   do i=1,mbas
      coefs(i,i)=1.d0
-  end do 
-
+  end do
+  
   call build_block_matrix(qnums,emax,Fblock) 
-
+  
   do while (crit > 1d-6) 
      
+     call calcDen(den,coefs,n,Mbas,qnums,ordering)   
      
-     call calcDen(den,coefs,n,Mbas,qnums,ordering)
-    
      call construct_V(V,ints,den,mbas)
      
      H=T+V
@@ -137,20 +136,18 @@ subroutine construct_two_particle_HF_BASIS( n , hw , emax , record ,coefs,pert)
      
      !! because H is about to be destroyed
      F=H
-    
-     call sort_into_blocks(H,Fblock,mbas)    
+     call sort_into_blocks(H,Fblock,mbas,qnums)
      call diagonalize_blocks(Fblock)       
-     call eigvecs_to_normal(H,Fblock,mbas,eig)      
+     call eigvecs_to_normal(H,Fblock,mbas,eig,qnums)      
     
      crit=0.d0
-     
-     do i=1,n/2
 
-        crit=crit + abs( eold(i)-eig(i) ) &
-                  + abs( eold(mbas/2+i) - eig(mbas/2+i ) )
+     do i=1,n
+
+        crit=crit + abs( eold(i)-eig(i) )             
                   
      end do 
-     
+
      coefs=H  
  
  end do 

@@ -57,7 +57,7 @@ end type sp_block_mat
 !========================
 type full_sp_block_mat
    type(sp_block_mat),allocatable,dimension(:) :: blkM
-   integer,allocatable,dimension(:) :: map
+   integer,allocatable,dimension(:) :: map,ml,ms
    integer :: blocks
 end type full_sp_block_mat
 !========================
@@ -355,7 +355,7 @@ subroutine build_block_matrix(qn,emax,F)
   type(full_sp_block_mat) :: F
  
   allocate(F%blkM(4*emax-2))
-  allocate(F%map(4*emax-2))
+  allocate(F%map(4*emax-2),F%ml(4*emax-2),F%ms(4*emax-2))
   
   m=emax*(emax+1) 
   F%blocks= 4*emax-2
@@ -371,6 +371,8 @@ do ms = -1,1,2
   allocate(F%blkM(q)%extra(10*d)) 
  
   F%map(q) = d
+  F%ml(q) = ml
+  F%ms(q) = ms
   q=q+1
 
   do l = 1, emax - 1
@@ -383,6 +385,9 @@ do ms = -1,1,2
     allocate(F%blkM(q)%extra(10*d)) 
  
     F%map(q) = d
+    F%ml(q) = ml
+    F%ms(q) = ms
+  
     q=q+1
     
     ml = l
@@ -393,46 +398,79 @@ do ms = -1,1,2
     allocate(F%blkM(q)%extra(10*d)) 
  
     F%map(q) = d
+    F%ml(q) = ml
+    F%ms(q) = ms
+  
     q=q+1
   end do 
 end do 
 
 end subroutine      
 !=====================================================
-subroutine sort_into_blocks(A,R,m) 
+subroutine sort_into_blocks(A,R,m,qn) 
   !A is the matrix
   !Q is the block matrix holder
   implicit none
   
-  integer :: m,i,q,j
+  integer :: m,i,q,j,i_red,j_red
   real(8),dimension(m,m) :: A
+  integer,dimension(m,3) :: qn
   type(full_sp_block_mat) :: R
   
-  i=1
-  do q=1,R%blocks
-     R%blkM(q)%matrix = A(i:i+R%map(q)-1,i:i+R%map(q)-1)
-     i=i+R%map(q)
+  do q=1,R%blocks   
+     
+     i_red = 0 
+     do i = 1, m 
+        if (qn(i,2) .ne. R%ml(q)) cycle
+        if (qn(i,3) .ne. R%ms(q)) cycle
+        j_red = i_red
+        i_red = i_red+1
+        do j = i, m 
+           if (qn(j,2) .ne. R%ml(q)) cycle
+           if (qn(j,3) .ne. R%ms(q)) cycle
+           j_red = j_red + 1 
+           
+           R%blkM(q)%matrix(i_red,j_red) = A(i,j)
+           R%blkM(q)%matrix(j_red,i_red) = A(j,i)           
+        end do
+     end do
   end do 
 end subroutine 
 !======================================================
-subroutine eigvecs_to_normal(A,R,m,eig) 
+subroutine eigvecs_to_normal(A,R,m,eig,qn) 
   !A is the matrix
   !Q is the block matrix holder
   implicit none
   
-  integer :: m,i,q,j
+  integer :: m,i,q,j,i_red,j_red
   real(8),dimension(m,m) :: A
   real(8),dimension(m) :: eig
+  integer,dimension(m,3) :: qn
   type(full_sp_block_mat) :: R
   
   A=0.d0
-  i=1
-  do q=1,R%blocks
-     
-     A(i:i+R%map(q)-1,i:i+R%map(q)-1) = R%blkM(q)%matrix
-     eig(i:i+R%map(q)-1) = R%blkM(q)%eigval
-     i=i+R%map(q)
+  
+  do q=1,R%blocks   
+     i_red = 0 
+     do i = 1, m 
+        if (qn(i,2) .ne. R%ml(q)) cycle
+        if (qn(i,3) .ne. R%ms(q)) cycle
+        j_red = i_red
+        i_red = i_red+1
+        do j = i, m 
+           if (qn(j,2) .ne. R%ml(q)) cycle
+           if (qn(j,3) .ne. R%ms(q)) cycle
+           j_red = j_red + 1 
+           
+           A(i,j) = R%blkM(q)%matrix(i_red,j_red)
+           A(j,i) = R%blkM(q)%matrix(j_red,i_red)           
+        
+        end do
+        eig(i) = R%blkM(q)%eigval(i_red)       
+     end do
   end do 
+  
+  
 end subroutine 
 !======================================================
 subroutine diagonalize_blocks(R)
@@ -561,69 +599,47 @@ subroutine arrange_states(maxE,quant_num,order)
 
   integer,dimension((maxE*maxE+maxE),3) :: quant_num 
   integer,dimension((maxE*maxE+maxE)/2) :: order,en
-  integer :: i,maxE,a,b,j,m,n
-  
-  order=0
+  integer :: i,maxE,a,b,j,m,n,R,n_princ,Ml,MS
+ 
   j=1
-  quant_num(:,3)=-1
+  do R = 0, maxE-1 
+     do ML = -R,R,2 
+        do MS = -1,1,2 
+           n_princ = (R - abs(ML))/2
+           
+           quant_num(j,1) = n_princ
+           quant_num(j,2) = ML
+           quant_num(j,3) = MS 
+           j=j+1
+        end do
+     end do
+  end do
   
-  a = maxE*(maxE+1)/2
-  
-  do m=0,maxE-1
-     
-    do n=0, (maxE-1-m)/2
-          
-          quant_num( j : j+1 , 1 ) = n
-          quant_num( j , 2 ) = -m
-          en(j)= 2*n+m+1
+  j=1
+  !! vector that stores the order states are filled is compiled
+  do while ( j .le. maxE*(maxE+1)/2 )
+     i=1
+     do while ( i .le. maxE*(maxE+1)/2 ) 
         
-          j=j+1
-    end do 
-    
-    if (m==0) cycle
-    
-    do n=0, (maxE-1-m)/2
-      
-          quant_num( j : j+1 , 1 ) = n
-          quant_num( j , 2 ) = m
-          en(j)= 2*n+m+1
-        
-          j=j+1
-    end do 
-    
- end do 
- 
- quant_num(a+1:2*a,:) = quant_num( 1:a, : )
- 
- quant_num(a+1:2*a,3) = 1
- 
-j=1
- 
-
-!! vector that stores the order states are filled is compiled
-do while ( j .le. maxE*(maxE+1)/2 )
-   i=1
- do while ( i .le. maxE*(maxE+1)/2 ) 
-    
   
-    if ( en( i ) == minval(en) ) then 
-       
+        if ( en( i ) == minval(en) ) then 
+           
           
-          order(j) = i 
-          i=i+1
-          j=j+1
-          
-          en( i-1 ) = 1000
-
-          exit
+           order(j) = i 
+           i=i+1
+           j=j+1
+           
+           en( i-1 ) = 1000
+           
+           exit
       
        
-   end if
+        end if
    
-   i=i+1
-
-  end do 
-end do 
+        i=i+1
+        
+     end do
+  end do
 
 end subroutine 
 !===============================================
@@ -670,7 +686,7 @@ subroutine get_ints(ints,hw,qn,m)
      do ii=1,np
         p1=ints%mat(q)%qnpp(II,1)
         p2=ints%mat(q)%qnpp(II,2)
-   
+        
         ints%mat(q)%Vpppp(II,II) = (v_int( qn(p1,1:3) , qn(p2,1:3),   &
                   qn(p2,1:3) , qn(p1,1:3) , hw ) - &
                   v_int( qn(p1,1:3) , qn(p2,1:3),   &
@@ -716,7 +732,7 @@ subroutine print_matrix(matrix)
 
     write(y,'(i1)') m
   
-    fmt2= '('//y//'(f14.8))'	
+    fmt2= '('//y//'(f12.6))'	
 	
 	print*
 	do i=1,m
@@ -763,10 +779,10 @@ subroutine calcDen(rho,c,n,m,qn,ord)
   integer, dimension(m,3) :: qn
   integer, dimension(m/2) :: ord
   
-  do i=1,n/2
+  do i=1,n
      
-     imt(:,i) = c(:, ord(i) )
-     imt(:,i+n/2) =  c(: , ord(i)+m/2) 
+     imt(:,i) = c(:,i )
+!     imt(:,i+n/2) =  c(: , ord(i)+m/2) 
      
   end do 
   
@@ -808,7 +824,7 @@ subroutine reindex(m,g,n,gst,pst,qn,emax,eig,rec)
   !!! hamiltonian storage
   implicit none 
   
-  integer :: a,b,c,m,g,n,i,j,k,qq,wq,II
+  integer :: a,b,c,m,g,n,i,j,k,qq,wq,II,ass
   integer :: ML,MS,gst,pst,emax,p,l,s(3)
   integer,dimension(m,3) :: qn
   integer,dimension(g,2) :: qntp
@@ -859,205 +875,109 @@ subroutine reindex(m,g,n,gst,pst,qn,emax,eig,rec)
   p=1
   
   a=1;b=1;c=1
-
+ 
   qq=1
   wq=1
 
-  ijs(1,:)=(/ 1 , m/2 , m/2+1 , m /)
-  ijs(2,:)=(/ 1 , m/2 , 1 , m/2 /)
-  ijs(3,:)=(/ m/2+1 , m , m/2+1 , m /)
   s=(/ 0, -1, 1 /)
   
-do MS=1,3
-  !!! MS = 0,-2,2 
-  
-  do ML=0,2*emax-2
+  do MS=-2,2,2
+!!! MS = 0,-2,2 
      
-        do i = ijs(MS,1) , ijs(MS,2)
+     do ML=2-2*emax,2*emax-2
 
-           do j= max(i+1,ijs(MS,3)) ,ijs(MS,4) 
+        do i = 1 , M-1 
+           do j= i+1,M  
               
-               !! calculate general label for tp state
-               II = (i-1) * M  - i*(i-1)/2 + j - i
-               
-             if   ( qn(i,2) + qn(j,2) == -ML ) then 
-                
-                
-                if (eig(i) .le. eF ) then 
-                   
-                   if ( eig(j) .le. eF ) then 
-                      
-                      !print*, 'hh',i,j,-ML,s(MS),k
-                      qntp(k,1)=i
-                      qntp(k,2)=j
-                      rec%i_array(II,1)=1
-                      rec%i_array(II,2)=qq
-                      k=k+1
-                      rec%i_array(II,3)=k-a
-                      wq=wq+1
-
-                   else 
-                      
-                      !print*, 'ph',i,j,-ML,s(MS),l
-                      qntp(gst+l,1)=i
-                      qntp(gst+l,2)=j
-                      rec%i_array(II,1)=2
-                      rec%i_array(II,2)=qq
-                      l=l+1
-                      rec%i_array(II,3)=l-b
-                      wq=wq+1
-
-                   end if 
-
-               else 
-                  
-                  if ( eig(j) .le. eF ) then 
-                     
-                      !print*, 'ph',i,j,-ML,s(MS),l
-                      qntp(gst+l,1)=i
-                      qntp(gst+l,2)=j
-                      rec%i_array(II,1)=2
-                      rec%i_array(II,2)=qq
-                      l=l+1
-                      rec%i_array(II,3)=l-b
-                      wq=wq+1
-                      
-                  else 
-                     
-                      !print*, 'pp',i,j,-ML,s(MS),p
-                      qntp(g-pst+p,1)=i
-                      qntp(g-pst+p,2)=j
-                      rec%i_array(II,1)=3
-                      rec%i_array(II,2)=qq
-                      p=p+1
-                      rec%i_array(II,3)=p-c
-                      wq=wq+1
-                      
-                  end if 
-              end if 
-
-          end if
- 
-       end do 
-      end do
-
-      
-      !!! build the block in the full array.
-     rec%mat(qq)%lam(1)=-ML 
-     rec%mat(qq)%lam(2)=s(MS)
-     
-     allocate(rec%mat(qq)%qnhh(k-a,2))
-     rec%mat(qq)%nhh=k-a
-     allocate(rec%mat(qq)%qnph(l-b,2))
-     rec%mat(qq)%nph=l-b
-     allocate(rec%mat(qq)%qnpp(p-c,2))
-     rec%mat(qq)%npp=p-c
-     
-     rec%mat(qq)%ntot= k+l+p-a-b-c
-
-     rec%mat(qq)%qnhh=qntp(a:k-1,1:2)
-     rec%mat(qq)%qnph=qntp(gst+b:gst+l-1,1:2) 
-     rec%mat(qq)%qnpp=qntp(g-pst+c:g-pst+p-1,1:2)
-
-     a=k
-     b=l
-     c=p
-     qq=qq+1
-
-
-              if ( ML==0 )  cycle 
+              !! calculate general label for tp state
+              II = (i-1) * M  - i*(i-1)/2 + j - i
               
-      do i = ijs(MS,1) , ijs(MS,2)
 
-       do j= max(i+1,ijs(MS,3)) ,ijs(MS,4)
-          
-          !! calculate general label for tp state
-               II = (i-1) * M  - i*(i-1)/2 + j - i
+              if ( qn(i,3)+qn(j,3) .ne. MS ) cycle 
+              if ( qn(i,2)+qn(j,2) .ne. ML ) cycle
               
-          if   ( qn(i,2) + qn(j,2) == ML ) then 
-               
-                
-                if ( eig(i) .le. eF ) then 
-                   
-                   if ( eig(j) .le. eF ) then 
-                      !print*, 'hh',i,j,ML,s(MS),k
-                      qntp(k,1)=i
-                      qntp(k,2)=j
-                      rec%i_array(II,1)=1
-                      rec%i_array(II,2)=qq
-                      k=k+1
-                      rec%i_array(II,3)=k-a
-                      wq=wq+1
-
-                   else 
-                      !print*, 'ph',i,j,ML,s(MS),l
-                      qntp(gst+l,1)=i
-                      qntp(gst+l,2)=j
-                      rec%i_array(II,1)=2
-                      rec%i_array(II,2)=qq
-                      l=l+1
-                      rec%i_array(II,3)=l-b
-                      wq=wq+1
-
-                   end if 
-
-               else 
-                  
-                  if ( eig(j) .le. eF ) then 
-                     
-                      !print*, 'ph',i,j,ML,s(MS),l
-                      qntp(gst+l,1)=i
-                      qntp(gst+l,2)=j
-                      rec%i_array(II,1)=2
-                      rec%i_array(II,2)=qq
-                      l=l+1
-                      rec%i_array(II,3)=l-b
-                      wq=wq+1
+              if (eig(i) .le. eF ) then 
+                 if ( eig(j) .le. eF ) then 
+                    
+                    !print*, 'hh',i,j,-ML,s(MS),k
+                    qntp(k,1)=i
+                    qntp(k,2)=j
+                    rec%i_array(II,1)=1
+                    rec%i_array(II,2)=qq
+                    k=k+1
+                    rec%i_array(II,3)=k-a
+                    wq=wq+1
+                    
+                 else 
+                    
+                    !print*, 'ph',i,j,-ML,s(MS),l
+                    qntp(gst+l,1)=i
+                    qntp(gst+l,2)=j
+                    rec%i_array(II,1)=2
+                    rec%i_array(II,2)=qq
+                    l=l+1
+                    rec%i_array(II,3)=l-b
+                    wq=wq+1
+                    
+                 end if
                  
-                  else 
-                     ! print*, 'pp',i,j,ML,s(MS),p
-                      qntp(g-pst+p,1)=i
-                      qntp(g-pst+p,2)=j
-                      rec%i_array(II,1)=3
-                      rec%i_array(II,2)=qq
-                      p=p+1
-                      rec%i_array(II,3)=p-c
-                      wq=wq+1
-                      
-                  end if 
-              end if 
-
-          end if      
-          
-       end do 
-     end do 
-    
-     !!! build the block array in the full array
-     rec%mat(qq)%lam(1)=ML 
-     rec%mat(qq)%lam(2)=s(MS)
-
-     allocate(rec%mat(qq)%qnhh(k-a,2))
-     rec%mat(qq)%nhh=k-a
-     allocate(rec%mat(qq)%qnph(l-b,2))
-     rec%mat(qq)%nph=l-b
-     allocate(rec%mat(qq)%qnpp(p-c,2))
-     rec%mat(qq)%npp=p-c
+              else 
+                 
+                 if ( eig(j) .le. eF ) then 
+                    
+                    !print*, 'ph',i,j,-ML,s(MS),l
+                    qntp(gst+l,1)=i
+                    qntp(gst+l,2)=j
+                    rec%i_array(II,1)=2
+                    rec%i_array(II,2)=qq
+                    l=l+1
+                    rec%i_array(II,3)=l-b
+                    wq=wq+1
+                    
+                 else 
+                    
+                    !print*, 'pp',i,j,-ML,s(MS),p
+                    qntp(g-pst+p,1)=i
+                    qntp(g-pst+p,2)=j
+                    rec%i_array(II,1)=3
+                    rec%i_array(II,2)=qq
+                    p=p+1
+                    rec%i_array(II,3)=p-c
+                    wq=wq+1
+                    
+                 end if
+              end if
+              
+           end do
+        end do
+        
+        
+!!! build the block in the full array.
+        rec%mat(qq)%lam(1)=ML 
+        rec%mat(qq)%lam(2)=MS
+        
+        allocate(rec%mat(qq)%qnhh(k-a,2))
+        rec%mat(qq)%nhh=k-a
+        allocate(rec%mat(qq)%qnph(l-b,2))
+        rec%mat(qq)%nph=l-b
+        allocate(rec%mat(qq)%qnpp(p-c,2))
+        rec%mat(qq)%npp=p-c
+        
+        rec%mat(qq)%ntot= k+l+p-a-b-c
+        
+        rec%mat(qq)%qnhh=qntp(a:k-1,1:2)
+        rec%mat(qq)%qnph=qntp(gst+b:gst+l-1,1:2) 
+        rec%mat(qq)%qnpp=qntp(g-pst+c:g-pst+p-1,1:2)
+        
+        a=k
+        b=l
+        c=p
+        qq=qq+1
+        
+     end do
      
-     rec%mat(qq)%ntot= k+l+p-a-b-c
-     
-     rec%mat(qq)%qnhh=qntp(a:k-1,1:2)
-     rec%mat(qq)%qnph=qntp(gst+b:gst+l-1,1:2) 
-     rec%mat(qq)%qnpp=qntp(g-pst+c:g-pst+p-1,1:2)
-     
-     a=k
-     b=l
-     c=p
-     qq=qq+1
-
-  end do 
-           
-end do 
-
+  end do
+  
 end subroutine 
 !==============================================
 subroutine new_COEFS(c,w,m,rec)
