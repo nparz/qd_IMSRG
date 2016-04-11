@@ -403,10 +403,10 @@ if (nh > 0 ) then
      do JJ=1,nh
         do II=1,nh
            
-           h1=r2%stoe(r2%mat(q)%qnhh(II,1))
-           h2=r2%stoe(r2%mat(q)%qnhh(II,2))
-           h3=r2%stoe(r2%mat(q)%qnhh(JJ,1))
-           h4=r2%stoe(r2%mat(q)%qnhh(JJ,2))
+           h1=(r2%mat(q)%qnhh(II,1))
+           h2=(r2%mat(q)%qnhh(II,2))
+           h3=(r2%mat(q)%qnhh(JJ,1))
+           h4=(r2%mat(q)%qnhh(JJ,2))
            
            
            
@@ -451,10 +451,10 @@ if ( np > 0 ) then
      do JJ=1,np
         do II=1,np
            
-           p1=r2%stoe(r2%mat(q)%qnpp(II,1))
-           p2=r2%stoe(r2%mat(q)%qnpp(II,2))
-           p3=r2%stoe(r2%mat(q)%qnpp(JJ,1))
-           p4=r2%stoe(r2%mat(q)%qnpp(JJ,2))
+           p1=(r2%mat(q)%qnpp(II,1))
+           p2=(r2%mat(q)%qnpp(II,2))
+           p3=(r2%mat(q)%qnpp(JJ,1))
+           p4=(r2%mat(q)%qnpp(JJ,2))
                       
            do i=1,n
             
@@ -497,10 +497,10 @@ if (np*nh > 0) then
      do JJ=1,nh
         do II=1,np
            
-           p1=r2%stoe(r2%mat(q)%qnpp(II,1))
-           p2=r2%stoe(r2%mat(q)%qnpp(II,2))
-           h3=r2%stoe(r2%mat(q)%qnhh(JJ,1))
-           h4=r2%stoe(r2%mat(q)%qnhh(JJ,2))
+           p1=(r2%mat(q)%qnpp(II,1))
+           p2=(r2%mat(q)%qnpp(II,2))
+           h3=(r2%mat(q)%qnhh(JJ,1))
+           h4=(r2%mat(q)%qnhh(JJ,2))
            
            do i=1,n
             
@@ -544,13 +544,13 @@ if (nh*nb > 0 )  then
      do JJ=1,nh
         do II=1,nb
            
-           p1=max(r2%stoe(r2%mat(q)%qnph(II,1)),r2%stoe(r2%mat(q)%qnph(II,2)))
-           h2=min(r2%stoe(r2%mat(q)%qnph(II,1)),r2%stoe(r2%mat(q)%qnph(II,2)))
+           p1=max((r2%mat(q)%qnph(II,1)),(r2%mat(q)%qnph(II,2)))
+           h2=min((r2%mat(q)%qnph(II,1)),(r2%mat(q)%qnph(II,2)))
            pre=1
-           if ( p1 == r2%stoe(r2%mat(q)%qnph(II,2)) ) pre= -1
+           if ( p1 == (r2%mat(q)%qnph(II,2)) ) pre= -1
 
-           h3=r2%stoe(r2%mat(q)%qnhh(JJ,1))
-           h4=r2%stoe(r2%mat(q)%qnhh(JJ,2))
+           h3=(r2%mat(q)%qnhh(JJ,1))
+           h4=(r2%mat(q)%qnhh(JJ,2))
            
            
            
@@ -595,12 +595,12 @@ if (np*nb > 0) then
      do JJ=1,nb
         do II=1,np
            
-           p1=r2%stoe(r2%mat(q)%qnpp(II,1))
-           p2=r2%stoe(r2%mat(q)%qnpp(II,2))
-           p3=max(r2%stoe(r2%mat(q)%qnph(JJ,1)),r2%stoe(r2%mat(q)%qnph(JJ,2)))
-           h4=min(r2%stoe(r2%mat(q)%qnph(JJ,1)),r2%stoe(r2%mat(q)%qnph(JJ,2)))
+           p1=(r2%mat(q)%qnpp(II,1))
+           p2=(r2%mat(q)%qnpp(II,2))
+           p3=max((r2%mat(q)%qnph(JJ,1)),(r2%mat(q)%qnph(JJ,2)))
+           h4=min((r2%mat(q)%qnph(JJ,1)),(r2%mat(q)%qnph(JJ,2)))
            pre=1
-           if ( p3 == r2%stoe(r2%mat(q)%qnph(JJ,2)) ) pre= -1
+           if ( p3 == (r2%mat(q)%qnph(JJ,2)) ) pre= -1
            
            do i=1,n
             
@@ -646,13 +646,13 @@ if (nb> 0) then
         do II=1,nb
            
            
-           p1=max(r2%stoe(r2%mat(q)%qnph(II,1)),r2%stoe(r2%mat(q)%qnph(II,2)))
-           h2=min(r2%stoe(r2%mat(q)%qnph(II,1)),r2%stoe(r2%mat(q)%qnph(II,2)))
+           p1=max((r2%mat(q)%qnph(II,1)),(r2%mat(q)%qnph(II,2)))
+           h2=min((r2%mat(q)%qnph(II,1)),(r2%mat(q)%qnph(II,2)))
            pre=1
-           if ( p1 == r2%stoe(r2%mat(q)%qnph(II,2)) ) pre= -1
-           p3=max(r2%stoe(r2%mat(q)%qnph(JJ,1)),r2%stoe(r2%mat(q)%qnph(JJ,2)))
-           h4=min(r2%stoe(r2%mat(q)%qnph(JJ,1)),r2%stoe(r2%mat(q)%qnph(JJ,2)))
-           if ( p3 == r2%stoe(r2%mat(q)%qnph(JJ,2)) ) pre= -1*pre
+           if ( p1 == (r2%mat(q)%qnph(II,2)) ) pre= -1
+           p3=max((r2%mat(q)%qnph(JJ,1)),(r2%mat(q)%qnph(JJ,2)))
+           h4=min((r2%mat(q)%qnph(JJ,1)),(r2%mat(q)%qnph(JJ,2)))
+           if ( p3 == (r2%mat(q)%qnph(JJ,2)) ) pre= -1*pre
            
        
           
@@ -733,10 +733,10 @@ do q=1,r2%nblock
 do JJ=1,nh
    do II=1,nh
       
-        h1=r2%stoe(r2%mat(q)%qnhh(II,1))
-        h2=r2%stoe(r2%mat(q)%qnhh(II,2))
-        h3=r2%stoe(r2%mat(q)%qnhh(JJ,1))
-        h4=r2%stoe(r2%mat(q)%qnhh(JJ,2))
+        h1=(r2%mat(q)%qnhh(II,1))
+        h2=(r2%mat(q)%qnhh(II,2))
+        h3=(r2%mat(q)%qnhh(JJ,1))
+        h4=(r2%mat(q)%qnhh(JJ,2))
 
         call sub_222_hhhh(r1,r2,r3,q,h1,h2,h3,h4,II,JJ,n,m) 
 
@@ -751,10 +751,10 @@ end do
 do JJ=1,np
    do II=1,np
       
-        p1=r2%stoe(r2%mat(q)%qnpp(II,1))
-        p2=r2%stoe(r2%mat(q)%qnpp(II,2))
-        p3=r2%stoe(r2%mat(q)%qnpp(JJ,1))
-        p4=r2%stoe(r2%mat(q)%qnpp(JJ,2))
+        p1=(r2%mat(q)%qnpp(II,1))
+        p2=(r2%mat(q)%qnpp(II,2))
+        p3=(r2%mat(q)%qnpp(JJ,1))
+        p4=(r2%mat(q)%qnpp(JJ,2))
            
         call sub_222_pppp(r1,r2,r3,q,p1,p2,p3,p4,II,JJ,n,m) 
 
@@ -768,10 +768,10 @@ end do
 do JJ=1,nh
    do II=1,np
       
-        p1=r2%stoe(r2%mat(q)%qnpp(II,1))
-        p2=r2%stoe(r2%mat(q)%qnpp(II,2))
-        h3=r2%stoe(r2%mat(q)%qnhh(JJ,1))
-        h4=r2%stoe(r2%mat(q)%qnhh(JJ,2))
+        p1=(r2%mat(q)%qnpp(II,1))
+        p2=(r2%mat(q)%qnpp(II,2))
+        h3=(r2%mat(q)%qnhh(JJ,1))
+        h4=(r2%mat(q)%qnhh(JJ,2))
 
         call sub_222_pphh(r1,r2,r3,q,p1,p2,h3,h4,II,JJ,n,m) 
 
@@ -784,12 +784,12 @@ end do
 do JJ=1,nb
    do II=1,np
       
-        p1=r2%stoe(r2%mat(q)%qnpp(II,1))
-        p2=r2%stoe(r2%mat(q)%qnpp(II,2))
-        p3=max(r2%stoe(r2%mat(q)%qnph(JJ,1)),r2%stoe(r2%mat(q)%qnph(JJ,2)))
-        h4=min(r2%stoe(r2%mat(q)%qnph(JJ,1)),r2%stoe(r2%mat(q)%qnph(JJ,2)))
+        p1=(r2%mat(q)%qnpp(II,1))
+        p2=(r2%mat(q)%qnpp(II,2))
+        p3=max((r2%mat(q)%qnph(JJ,1)),(r2%mat(q)%qnph(JJ,2)))
+        h4=min((r2%mat(q)%qnph(JJ,1)),(r2%mat(q)%qnph(JJ,2)))
         pre=1
-        if ( p3 == r2%stoe(r2%mat(q)%qnph(JJ,2)) ) pre= -1
+        if ( p3 == (r2%mat(q)%qnph(JJ,2)) ) pre= -1
      
 
         call sub_222_ppph(r1,r2,r3,q,p1,p2,p3,h4,II,JJ,n,m,pre)
@@ -803,12 +803,12 @@ end do
 do JJ=1,nh
    do II=1,nb
       
-        p1=max(r2%stoe(r2%mat(q)%qnph(II,1)),r2%stoe(r2%mat(q)%qnph(II,2)))
-        h2=min(r2%stoe(r2%mat(q)%qnph(II,1)),r2%stoe(r2%mat(q)%qnph(II,2)))
+        p1=max((r2%mat(q)%qnph(II,1)),(r2%mat(q)%qnph(II,2)))
+        h2=min((r2%mat(q)%qnph(II,1)),(r2%mat(q)%qnph(II,2)))
         pre=1
-        if ( p1 == r2%stoe(r2%mat(q)%qnph(II,2)) ) pre= -1
-        h3=r2%stoe(r2%mat(q)%qnhh(JJ,1))
-        h4=r2%stoe(r2%mat(q)%qnhh(JJ,2))
+        if ( p1 == (r2%mat(q)%qnph(II,2)) ) pre= -1
+        h3=(r2%mat(q)%qnhh(JJ,1))
+        h4=(r2%mat(q)%qnhh(JJ,2))
        
         call sub_222_phhh(r1,r2,r3,q,p1,h2,h3,h4,II,JJ,n,m,pre)
       
@@ -821,13 +821,13 @@ end do
 do JJ=1,nb
    do II=1,nb
       
-        p1=max(r2%stoe(r2%mat(q)%qnph(II,1)),r2%stoe(r2%mat(q)%qnph(II,2)))
-        h2=min(r2%stoe(r2%mat(q)%qnph(II,1)),r2%stoe(r2%mat(q)%qnph(II,2)))
+        p1=max((r2%mat(q)%qnph(II,1)),(r2%mat(q)%qnph(II,2)))
+        h2=min((r2%mat(q)%qnph(II,1)),(r2%mat(q)%qnph(II,2)))
         pre=1
-        if ( p1 == r2%stoe(r2%mat(q)%qnph(II,2)) ) pre= -1
-        p3=max(r2%stoe(r2%mat(q)%qnph(JJ,1)),r2%stoe(r2%mat(q)%qnph(JJ,2)))
-        h4=min(r2%stoe(r2%mat(q)%qnph(JJ,1)),r2%stoe(r2%mat(q)%qnph(JJ,2)))
-        if ( p3 == r2%stoe(r2%mat(q)%qnph(JJ,2)) ) pre= -1 * pre
+        if ( p1 == (r2%mat(q)%qnph(II,2)) ) pre= -1
+        p3=max((r2%mat(q)%qnph(JJ,1)),(r2%mat(q)%qnph(JJ,2)))
+        h4=min((r2%mat(q)%qnph(JJ,1)),(r2%mat(q)%qnph(JJ,2)))
+        if ( p3 == (r2%mat(q)%qnph(JJ,2)) ) pre= -1 * pre
         
         call sub_222_phph(r1,r2,r3,q,p1,h2,p3,h4,II,JJ,n,m,pre)
 
@@ -873,10 +873,10 @@ do q=1,r2%nblock
 do JJ=1,nh
    do II=1,nh
       
-        h1=r2%stoe(r2%mat(q)%qnhh(II,1))
-        h2=r2%stoe(r2%mat(q)%qnhh(II,2))
-        h3=r2%stoe(r2%mat(q)%qnhh(JJ,1))
-        h4=r2%stoe(r2%mat(q)%qnhh(JJ,2))
+        h1=(r2%mat(q)%qnhh(II,1))
+        h2=(r2%mat(q)%qnhh(II,2))
+        h3=(r2%mat(q)%qnhh(JJ,1))
+        h4=(r2%mat(q)%qnhh(JJ,2))
 
         call sub_222_hhhh(r1,r2,r3,q,h1,h2,h3,h4,II,JJ,n,m) 
 
@@ -891,10 +891,10 @@ end do
 do JJ=1,np
    do II=1,np
       
-        p1=r2%stoe(r2%mat(q)%qnpp(II,1))
-        p2=r2%stoe(r2%mat(q)%qnpp(II,2))
-        p3=r2%stoe(r2%mat(q)%qnpp(JJ,1))
-        p4=r2%stoe(r2%mat(q)%qnpp(JJ,2))
+        p1=(r2%mat(q)%qnpp(II,1))
+        p2=(r2%mat(q)%qnpp(II,2))
+        p3=(r2%mat(q)%qnpp(JJ,1))
+        p4=(r2%mat(q)%qnpp(JJ,2))
            
         call sub_222_pppp(r1,r2,r3,q,p1,p2,p3,p4,II,JJ,n,m) 
 
@@ -908,10 +908,10 @@ end do
 do JJ=1,nh
    do II=1,np
       
-        p1=r2%stoe(r2%mat(q)%qnpp(II,1))
-        p2=r2%stoe(r2%mat(q)%qnpp(II,2))
-        h3=r2%stoe(r2%mat(q)%qnhh(JJ,1))
-        h4=r2%stoe(r2%mat(q)%qnhh(JJ,2))
+        p1=(r2%mat(q)%qnpp(II,1))
+        p2=(r2%mat(q)%qnpp(II,2))
+        h3=(r2%mat(q)%qnhh(JJ,1))
+        h4=(r2%mat(q)%qnhh(JJ,2))
 
         call sub_222_pphh(r1,r2,r3,q,p1,p2,h3,h4,II,JJ,n,m) 
 
@@ -924,12 +924,12 @@ end do
 do JJ=1,nb
    do II=1,np
       
-        p1=r2%stoe(r2%mat(q)%qnpp(II,1))
-        p2=r2%stoe(r2%mat(q)%qnpp(II,2))
-        p3=max(r2%stoe(r2%mat(q)%qnph(JJ,1)),r2%stoe(r2%mat(q)%qnph(JJ,2)))
-        h4=min(r2%stoe(r2%mat(q)%qnph(JJ,1)),r2%stoe(r2%mat(q)%qnph(JJ,2)))
+        p1=(r2%mat(q)%qnpp(II,1))
+        p2=(r2%mat(q)%qnpp(II,2))
+        p3=max((r2%mat(q)%qnph(JJ,1)),(r2%mat(q)%qnph(JJ,2)))
+        h4=min((r2%mat(q)%qnph(JJ,1)),(r2%mat(q)%qnph(JJ,2)))
         pre=1
-        if ( p3 == r2%stoe(r2%mat(q)%qnph(JJ,2)) ) pre= -1
+        if ( p3 == (r2%mat(q)%qnph(JJ,2)) ) pre= -1
      
 
         call sub_222_ppph(r1,r2,r3,q,p1,p2,p3,h4,II,JJ,n,m,pre)
@@ -943,12 +943,12 @@ end do
 do JJ=1,nh
    do II=1,nb
       
-        p1=max(r2%stoe(r2%mat(q)%qnph(II,1)),r2%stoe(r2%mat(q)%qnph(II,2)))
-        h2=min(r2%stoe(r2%mat(q)%qnph(II,1)),r2%stoe(r2%mat(q)%qnph(II,2)))
+        p1=max((r2%mat(q)%qnph(II,1)),(r2%mat(q)%qnph(II,2)))
+        h2=min((r2%mat(q)%qnph(II,1)),(r2%mat(q)%qnph(II,2)))
         pre=1
-        if ( p1 == r2%stoe(r2%mat(q)%qnph(II,2)) ) pre= -1
-        h3=r2%stoe(r2%mat(q)%qnhh(JJ,1))
-        h4=r2%stoe(r2%mat(q)%qnhh(JJ,2))
+        if ( p1 == (r2%mat(q)%qnph(II,2)) ) pre= -1
+        h3=(r2%mat(q)%qnhh(JJ,1))
+        h4=(r2%mat(q)%qnhh(JJ,2))
        
         call sub_222_phhh(r1,r2,r3,q,p1,h2,h3,h4,II,JJ,n,m,pre)
       
@@ -961,13 +961,13 @@ end do
 do JJ=1,nb
    do II=1,nb
       
-        p1=max(r2%stoe(r2%mat(q)%qnph(II,1)),r2%stoe(r2%mat(q)%qnph(II,2)))
-        h2=min(r2%stoe(r2%mat(q)%qnph(II,1)),r2%stoe(r2%mat(q)%qnph(II,2)))
+        p1=max((r2%mat(q)%qnph(II,1)),(r2%mat(q)%qnph(II,2)))
+        h2=min((r2%mat(q)%qnph(II,1)),(r2%mat(q)%qnph(II,2)))
         pre=1
-        if ( p1 == r2%stoe(r2%mat(q)%qnph(II,2)) ) pre= -1
-        p3=max(r2%stoe(r2%mat(q)%qnph(JJ,1)),r2%stoe(r2%mat(q)%qnph(JJ,2)))
-        h4=min(r2%stoe(r2%mat(q)%qnph(JJ,1)),r2%stoe(r2%mat(q)%qnph(JJ,2)))
-        if ( p3 == r2%stoe(r2%mat(q)%qnph(JJ,2)) ) pre= -1 * pre
+        if ( p1 == (r2%mat(q)%qnph(II,2)) ) pre= -1
+        p3=max((r2%mat(q)%qnph(JJ,1)),(r2%mat(q)%qnph(JJ,2)))
+        h4=min((r2%mat(q)%qnph(JJ,1)),(r2%mat(q)%qnph(JJ,2)))
+        if ( p3 == (r2%mat(q)%qnph(JJ,2)) ) pre= -1 * pre
         
         call sub_222_phph(r1,r2,r3,q,p1,h2,p3,h4,II,JJ,n,m,pre)
 
@@ -1386,10 +1386,10 @@ if (nh > 0 ) then
      do JJ=1,nh
         do II=1,nh
          
-           h1=r2%stoe(r2%mat(q)%qnhh(II,1))
-           h2=r2%stoe(r2%mat(q)%qnhh(II,2))
-           h3=r2%stoe(r2%mat(q)%qnhh(JJ,1))
-           h4=r2%stoe(r2%mat(q)%qnhh(JJ,2))
+           h1=(r2%mat(q)%qnhh(II,1))
+           h2=(r2%mat(q)%qnhh(II,2))
+           h3=(r2%mat(q)%qnhh(JJ,1))
+           h4=(r2%mat(q)%qnhh(JJ,2))
            
            sm = 0.d0 
            do i=1,n
@@ -1425,10 +1425,10 @@ if ( np > 0 ) then
      do JJ=1,np
         do II=1,np
            
-           p1=r2%stoe(r2%mat(q)%qnpp(II,1))
-           p2=r2%stoe(r2%mat(q)%qnpp(II,2))
-           p3=r2%stoe(r2%mat(q)%qnpp(JJ,1))
-           p4=r2%stoe(r2%mat(q)%qnpp(JJ,2))
+           p1=(r2%mat(q)%qnpp(II,1))
+           p2=(r2%mat(q)%qnpp(II,2))
+           p3=(r2%mat(q)%qnpp(JJ,1))
+           p4=(r2%mat(q)%qnpp(JJ,2))
                       
            sm = 0.d0 
            do i=1,n
@@ -1464,10 +1464,10 @@ if (np*nh > 0) then
      do JJ=1,nh
         do II=1,np
            
-           p1=r2%stoe(r2%mat(q)%qnpp(II,1))
-           p2=r2%stoe(r2%mat(q)%qnpp(II,2))
-           h3=r2%stoe(r2%mat(q)%qnhh(JJ,1))
-           h4=r2%stoe(r2%mat(q)%qnhh(JJ,2))
+           p1=(r2%mat(q)%qnpp(II,1))
+           p2=(r2%mat(q)%qnpp(II,2))
+           h3=(r2%mat(q)%qnhh(JJ,1))
+           h4=(r2%mat(q)%qnhh(JJ,2))
            
            sm = 0.d0 
            do i=1,n
@@ -1504,13 +1504,13 @@ if (nh*nb > 0 )  then
      do JJ=1,nh
         do II=1,nb
            
-           p1=max(r2%stoe(r2%mat(q)%qnph(II,1)),r2%stoe(r2%mat(q)%qnph(II,2)))
-           h2=min(r2%stoe(r2%mat(q)%qnph(II,1)),r2%stoe(r2%mat(q)%qnph(II,2)))
+           p1=max((r2%mat(q)%qnph(II,1)),(r2%mat(q)%qnph(II,2)))
+           h2=min((r2%mat(q)%qnph(II,1)),(r2%mat(q)%qnph(II,2)))
            pre=1
-           if ( p1 == r2%stoe(r2%mat(q)%qnph(II,2)) ) pre= -1
+           if ( p1 == (r2%mat(q)%qnph(II,2)) ) pre= -1
 
-           h3=r2%stoe(r2%mat(q)%qnhh(JJ,1))
-           h4=r2%stoe(r2%mat(q)%qnhh(JJ,2))
+           h3=(r2%mat(q)%qnhh(JJ,1))
+           h4=(r2%mat(q)%qnhh(JJ,2))
            
            sm = 0.d0 
            do i=1,n
@@ -1547,12 +1547,12 @@ if (np*nb > 0) then
      do JJ=1,nb
         do II=1,np
            
-           p1=r2%stoe(r2%mat(q)%qnpp(II,1))
-           p2=r2%stoe(r2%mat(q)%qnpp(II,2))
-           p3=max(r2%stoe(r2%mat(q)%qnph(JJ,1)),r2%stoe(r2%mat(q)%qnph(JJ,2)))
-           h4=min(r2%stoe(r2%mat(q)%qnph(JJ,1)),r2%stoe(r2%mat(q)%qnph(JJ,2)))
+           p1=(r2%mat(q)%qnpp(II,1))
+           p2=(r2%mat(q)%qnpp(II,2))
+           p3=max((r2%mat(q)%qnph(JJ,1)),(r2%mat(q)%qnph(JJ,2)))
+           h4=min((r2%mat(q)%qnph(JJ,1)),(r2%mat(q)%qnph(JJ,2)))
            pre=1
-           if ( p3 == r2%stoe(r2%mat(q)%qnph(JJ,2)) ) pre= -1
+           if ( p3 == (r2%mat(q)%qnph(JJ,2)) ) pre= -1
    
            sm = 0.d0 
            do i=1,n
@@ -1591,13 +1591,13 @@ if (nb> 0) then
         do II=1,nb
            
            
-           p1=max(r2%stoe(r2%mat(q)%qnph(II,1)),r2%stoe(r2%mat(q)%qnph(II,2)))
-           h2=min(r2%stoe(r2%mat(q)%qnph(II,1)),r2%stoe(r2%mat(q)%qnph(II,2)))
+           p1=max((r2%mat(q)%qnph(II,1)),(r2%mat(q)%qnph(II,2)))
+           h2=min((r2%mat(q)%qnph(II,1)),(r2%mat(q)%qnph(II,2)))
            pre=1
-           if ( p1 == r2%stoe(r2%mat(q)%qnph(II,2)) ) pre= -1
-           p3=max(r2%stoe(r2%mat(q)%qnph(JJ,1)),r2%stoe(r2%mat(q)%qnph(JJ,2)))
-           h4=min(r2%stoe(r2%mat(q)%qnph(JJ,1)),r2%stoe(r2%mat(q)%qnph(JJ,2)))
-           if ( p3 == r2%stoe(r2%mat(q)%qnph(JJ,2)) ) pre= -1*pre
+           if ( p1 == (r2%mat(q)%qnph(II,2)) ) pre= -1
+           p3=max((r2%mat(q)%qnph(JJ,1)),(r2%mat(q)%qnph(JJ,2)))
+           h4=min((r2%mat(q)%qnph(JJ,1)),(r2%mat(q)%qnph(JJ,2)))
+           if ( p3 == (r2%mat(q)%qnph(JJ,2)) ) pre= -1*pre
            
            sm = 0.d0 
            do i=1,n
@@ -1659,10 +1659,10 @@ if (nh > 0 ) then
      do JJ=1,nh
         do II=1,nh
          
-           h1=r2%stoe(r2%mat(q)%qnhh(II,1))
-           h2=r2%stoe(r2%mat(q)%qnhh(II,2))
-           h3=r2%stoe(r2%mat(q)%qnhh(JJ,1))
-           h4=r2%stoe(r2%mat(q)%qnhh(JJ,2))
+           h1=(r2%mat(q)%qnhh(II,1))
+           h2=(r2%mat(q)%qnhh(II,2))
+           h3=(r2%mat(q)%qnhh(JJ,1))
+           h4=(r2%mat(q)%qnhh(JJ,2))
            
            sm = 0.d0 
            do i=1,n
@@ -1686,10 +1686,10 @@ if ( np > 0 ) then
      do JJ=1,np
         do II=1,np
            
-           p1=r2%stoe(r2%mat(q)%qnpp(II,1))
-           p2=r2%stoe(r2%mat(q)%qnpp(II,2))
-           p3=r2%stoe(r2%mat(q)%qnpp(JJ,1))
-           p4=r2%stoe(r2%mat(q)%qnpp(JJ,2))
+           p1=(r2%mat(q)%qnpp(II,1))
+           p2=(r2%mat(q)%qnpp(II,2))
+           p3=(r2%mat(q)%qnpp(JJ,1))
+           p4=(r2%mat(q)%qnpp(JJ,2))
                       
            sm = 0.d0 
            do i=1,n
@@ -1712,10 +1712,10 @@ if (np*nh > 0) then
      do JJ=1,nh
         do II=1,np
            
-           p1=r2%stoe(r2%mat(q)%qnpp(II,1))
-           p2=r2%stoe(r2%mat(q)%qnpp(II,2))
-           h3=r2%stoe(r2%mat(q)%qnhh(JJ,1))
-           h4=r2%stoe(r2%mat(q)%qnhh(JJ,2))
+           p1=(r2%mat(q)%qnpp(II,1))
+           p2=(r2%mat(q)%qnpp(II,2))
+           h3=(r2%mat(q)%qnhh(JJ,1))
+           h4=(r2%mat(q)%qnhh(JJ,2))
            
            sm = 0.d0 
            do i=1,n
@@ -1737,13 +1737,13 @@ if (nh*nb > 0 )  then
      do JJ=1,nh
         do II=1,nb
            
-           p1=max(r2%stoe(r2%mat(q)%qnph(II,1)),r2%stoe(r2%mat(q)%qnph(II,2)))
-           h2=min(r2%stoe(r2%mat(q)%qnph(II,1)),r2%stoe(r2%mat(q)%qnph(II,2)))
+           p1=max((r2%mat(q)%qnph(II,1)),(r2%mat(q)%qnph(II,2)))
+           h2=min((r2%mat(q)%qnph(II,1)),(r2%mat(q)%qnph(II,2)))
            pre=1
-           if ( p1 == r2%stoe(r2%mat(q)%qnph(II,2)) ) pre= -1
+           if ( p1 == (r2%mat(q)%qnph(II,2)) ) pre= -1
 
-           h3=r2%stoe(r2%mat(q)%qnhh(JJ,1))
-           h4=r2%stoe(r2%mat(q)%qnhh(JJ,2))
+           h3=(r2%mat(q)%qnhh(JJ,1))
+           h4=(r2%mat(q)%qnhh(JJ,2))
            
            sm = 0.d0 
            do i=1,n
@@ -1767,12 +1767,12 @@ if (np*nb > 0) then
      do JJ=1,nb
         do II=1,np
            
-           p1=r2%stoe(r2%mat(q)%qnpp(II,1))
-           p2=r2%stoe(r2%mat(q)%qnpp(II,2))
-           p3=max(r2%stoe(r2%mat(q)%qnph(JJ,1)),r2%stoe(r2%mat(q)%qnph(JJ,2)))
-           h4=min(r2%stoe(r2%mat(q)%qnph(JJ,1)),r2%stoe(r2%mat(q)%qnph(JJ,2)))
+           p1=(r2%mat(q)%qnpp(II,1))
+           p2=(r2%mat(q)%qnpp(II,2))
+           p3=max((r2%mat(q)%qnph(JJ,1)),(r2%mat(q)%qnph(JJ,2)))
+           h4=min((r2%mat(q)%qnph(JJ,1)),(r2%mat(q)%qnph(JJ,2)))
            pre=1
-           if ( p3 == r2%stoe(r2%mat(q)%qnph(JJ,2)) ) pre= -1
+           if ( p3 == (r2%mat(q)%qnph(JJ,2)) ) pre= -1
    
            sm = 0.d0 
            do i=1,n
@@ -1797,13 +1797,13 @@ if (nb> 0) then
         do II=1,nb
            
            
-           p1=max(r2%stoe(r2%mat(q)%qnph(II,1)),r2%stoe(r2%mat(q)%qnph(II,2)))
-           h2=min(r2%stoe(r2%mat(q)%qnph(II,1)),r2%stoe(r2%mat(q)%qnph(II,2)))
+           p1=max((r2%mat(q)%qnph(II,1)),(r2%mat(q)%qnph(II,2)))
+           h2=min((r2%mat(q)%qnph(II,1)),(r2%mat(q)%qnph(II,2)))
            pre=1
-           if ( p1 == r2%stoe(r2%mat(q)%qnph(II,2)) ) pre= -1
-           p3=max(r2%stoe(r2%mat(q)%qnph(JJ,1)),r2%stoe(r2%mat(q)%qnph(JJ,2)))
-           h4=min(r2%stoe(r2%mat(q)%qnph(JJ,1)),r2%stoe(r2%mat(q)%qnph(JJ,2)))
-           if ( p3 == r2%stoe(r2%mat(q)%qnph(JJ,2)) ) pre= -1*pre
+           if ( p1 == (r2%mat(q)%qnph(II,2)) ) pre= -1
+           p3=max((r2%mat(q)%qnph(JJ,1)),(r2%mat(q)%qnph(JJ,2)))
+           h4=min((r2%mat(q)%qnph(JJ,1)),(r2%mat(q)%qnph(JJ,2)))
+           if ( p3 == (r2%mat(q)%qnph(JJ,2)) ) pre= -1*pre
            
            sm = 0.d0 
            do i=1,n

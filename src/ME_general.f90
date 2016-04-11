@@ -1378,35 +1378,15 @@ subroutine convertF(F,rec,m,qn,w)
   
   rec%states=qn
   rec%eig=w
-  
+  print*, rec%eig
   do i=1,n
-     
-     mn = minval(w)
-     do j=1,m
-        
-        if ( abs(w(j) - mn) < 1e-6 ) then 
-           rec%eh(i)=j
-           rec%stoe(j)=i
-           w(j)=1000. 
-           exit
-        end if 
-     end do 
-     
+     rec%eh(i)=i
+     rec%stoe(i)=i
   end do 
 
   do i=n+1,m
-     
-     mn = minval(w)
-     do j=1,m
-        
-        if ( abs(w(j) - mn) < 1e-6 ) then 
-           rec%ep(i-n)=j
-           rec%stoe(j)=i
-           w(j)=1000. 
-           exit
-        end if 
-     end do 
-     
+     rec%ep(i-n)=i
+     rec%stoe(i)=i     
   end do 
 
   

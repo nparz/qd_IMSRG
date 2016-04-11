@@ -203,15 +203,11 @@ subroutine construct_V(V,ints,den,m)
   do i=1,m
      do k=1,m
         
-        b = ints%stoe(i) 
-        d = ints%stoe(k) 
         do j=1,m
            do  l= 1,m 
               
-              a = ints%stoe(j) 
-              c = ints%stoe(l) 
               !print*, a,b,c,d
-              V(i,k) = V(i,k) + den(l,j) * v_elem(a,b,c,d,ints) 
+              V(i,k) = V(i,k) + den(l,j) * v_elem(j,i,l,k,ints) 
               !print*, 'horse'
         
            end do 

@@ -124,10 +124,10 @@ subroutine build_specific_space( gen, rec )
            
            h(:)=rec%mat(q)%qnhh(j,:)
           
-           be(1)=max(rec%stoe(rec%mat(q)%qnph(I,1)),rec%stoe(rec%mat(q)%qnph(I,2)))
-           be(2)=min(rec%stoe(rec%mat(q)%qnph(I,1)),rec%stoe(rec%mat(q)%qnph(I,2)))
-           he(1)=rec%stoe(h(1))
-           he(2)=rec%stoe(h(2))
+           be(1)=max(rec%mat(q)%qnph(I,1),rec%mat(q)%qnph(I,2))
+           be(2)=min(rec%mat(q)%qnph(I,1),rec%mat(q)%qnph(I,2))
+           he(1)=h(1)
+           he(2)=h(2)
            
            if (.not. in(be(2),rec%exlabels(:,1),pos,sz) ) cycle 
            efs=rec%fpp(be(1)-n,be(1)-n) 
@@ -158,12 +158,12 @@ subroutine build_specific_space( gen, rec )
            
            p(:)=rec%mat(q)%qnpp(i,:)
        
-           be(1)=max(rec%stoe(rec%mat(q)%qnph(J,1)),rec%stoe(rec%mat(q)%qnph(J,2)))
-           be(2)=min(rec%stoe(rec%mat(q)%qnph(J,1)),rec%stoe(rec%mat(q)%qnph(J,2)))
+           be(1)=max(rec%mat(q)%qnph(J,1),rec%mat(q)%qnph(J,2))
+           be(2)=min(rec%mat(q)%qnph(J,1),rec%mat(q)%qnph(J,2))
            if (be(1) > rec%cutshell) cycle
            if (.not. in(be(1),rec%exlabels(:,2),pos,sz)) cycle
-           pe(1)=rec%stoe(p(1))
-           pe(2)=rec%stoe(p(2))
+           pe(1)=p(1)
+           pe(2)=p(2)
           
            efs=-rec%fpp(be(1)-n,be(1)-n) 
            efs=efs-rec%fhh(be(2),be(2)) 
@@ -187,14 +187,14 @@ subroutine build_specific_space( gen, rec )
      if ( rec%mat(q)%nph > 0 ) then 
          ! qiah
      do i=1,gen%mat(q)%nph
-        pe(1)=max(rec%stoe(rec%mat(q)%qnph(I,1)),rec%stoe(rec%mat(q)%qnph(I,2)))
-        pe(2)=min(rec%stoe(rec%mat(q)%qnph(I,1)),rec%stoe(rec%mat(q)%qnph(I,2)))
+        pe(1)=max(rec%mat(q)%qnph(I,1),rec%mat(q)%qnph(I,2))
+        pe(2)=min(rec%mat(q)%qnph(I,1),rec%mat(q)%qnph(I,2))
         if (pe(1) > rec%cutshell) cycle
         
         do j=i+1,gen%mat(q)%nph
               
-           be(1)=max(rec%stoe(rec%mat(q)%qnph(J,1)),rec%stoe(rec%mat(q)%qnph(J,2)))
-           be(2)=min(rec%stoe(rec%mat(q)%qnph(J,1)),rec%stoe(rec%mat(q)%qnph(J,2)))
+           be(1)=max(rec%mat(q)%qnph(J,1),rec%mat(q)%qnph(J,2))
+           be(2)=min(rec%mat(q)%qnph(J,1),rec%mat(q)%qnph(J,2))
            
            if (be(1) < rec%cutshell+1) cycle
            if (.not. inSD(be(2),pe(1),rec%exlabels,pos,sz)) cycle
@@ -278,10 +278,10 @@ subroutine build_imaginary_time( gen, rec )
            
            h(:)=rec%mat(q)%qnhh(j,:)
           
-           be(1)=max(rec%stoe(rec%mat(q)%qnph(I,1)),rec%stoe(rec%mat(q)%qnph(I,2)))
-           be(2)=min(rec%stoe(rec%mat(q)%qnph(I,1)),rec%stoe(rec%mat(q)%qnph(I,2)))
-           he(1)=rec%stoe(h(1))
-           he(2)=rec%stoe(h(2))
+           be(1)=max(rec%mat(q)%qnph(I,1),rec%mat(q)%qnph(I,2))
+           be(2)=min(rec%mat(q)%qnph(I,1),rec%mat(q)%qnph(I,2))
+           he(1)=h(1)
+           he(2)=h(2)
            
  
            efs=rec%fpp(be(1)-n,be(1)-n) 
@@ -313,12 +313,12 @@ subroutine build_imaginary_time( gen, rec )
            
            p(:)=rec%mat(q)%qnpp(i,:)
        
-           be(1)=max(rec%stoe(rec%mat(q)%qnph(J,1)),rec%stoe(rec%mat(q)%qnph(J,2)))
-           be(2)=min(rec%stoe(rec%mat(q)%qnph(J,1)),rec%stoe(rec%mat(q)%qnph(J,2)))
+           be(1)=max(rec%mat(q)%qnph(J,1),rec%mat(q)%qnph(J,2))
+           be(2)=min(rec%mat(q)%qnph(J,1),rec%mat(q)%qnph(J,2))
            if (be(1) > rec%cutshell) cycle
  
-           pe(1)=rec%stoe(p(1))
-           pe(2)=rec%stoe(p(2))
+           pe(1)=p(1)
+           pe(2)=p(2)
           
            efs=-rec%fpp(be(1)-n,be(1)-n) 
            efs=efs-rec%fhh(be(2),be(2)) 
@@ -342,14 +342,14 @@ subroutine build_imaginary_time( gen, rec )
      if ( rec%mat(q)%nph > 0 ) then 
      ! qhvh     
      do i=1,gen%mat(q)%nph
-        pe(1)=max(rec%stoe(rec%mat(q)%qnph(I,1)),rec%stoe(rec%mat(q)%qnph(I,2)))
-        pe(2)=min(rec%stoe(rec%mat(q)%qnph(I,1)),rec%stoe(rec%mat(q)%qnph(I,2)))
+        pe(1)=max(rec%mat(q)%qnph(I,1),rec%mat(q)%qnph(I,2))
+        pe(2)=min(rec%mat(q)%qnph(I,1),rec%mat(q)%qnph(I,2))
         if (pe(1) > rec%cutshell) cycle
         
         do j=i+1,gen%mat(q)%nph
               
-           be(1)=max(rec%stoe(rec%mat(q)%qnph(J,1)),rec%stoe(rec%mat(q)%qnph(J,2)))
-           be(2)=min(rec%stoe(rec%mat(q)%qnph(J,1)),rec%stoe(rec%mat(q)%qnph(J,2)))
+           be(1)=max(rec%mat(q)%qnph(J,1),rec%mat(q)%qnph(J,2))
+           be(2)=min(rec%mat(q)%qnph(J,1),rec%mat(q)%qnph(J,2))
            
            if (be(1) < rec%cutshell+1) cycle
  
@@ -407,10 +407,10 @@ subroutine build_white( gen, rec )
            p(:)=rec%mat(q)%qnpp(i,:)
            h(:)=rec%mat(q)%qnhh(j,:)
            
-           pe(1)=rec%stoe(p(1))
-           pe(2)=rec%stoe(p(2))
-           he(1)=rec%stoe(h(1))
-           he(2)=rec%stoe(h(2))
+           pe(1)=p(1)
+           pe(2)=p(2)
+           he(1)=h(1)
+           he(2)=h(2)
            
            efs=rec%fpp(pe(1)-n,pe(1)-n) 
            efs=efs+rec%fpp(pe(2)-n,pe(2)-n) 
