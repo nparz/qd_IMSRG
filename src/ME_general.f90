@@ -1378,7 +1378,7 @@ subroutine convertF(F,rec,m,qn,w)
   
   rec%states=qn
   rec%eig=w
-  print*, rec%eig
+
   do i=1,n
      rec%eh(i)=i
      rec%stoe(i)=i

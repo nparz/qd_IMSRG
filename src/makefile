@@ -14,8 +14,8 @@ LIBS =  -L/user/local/lib/ -llapack -lblas -larpack
 gs: ME_general.o commutators.o adams_ode.o IMSRG_tools.o HFQDmod.o operators.o EOM_IMSRG.o gs_IMSRG.o 
 	${FC} ME_general.o commutators.o IMSRG_tools.o HFQDmod.o adams_ode.o operators.o EOM_IMSRG.o gs_IMSRG.o -o ${p4} ${LIBS}
 
-magnus: ME_general.o commutators.o IMSRG_tools.o HFQDmod.o operators.o magnus_IMSRG.o 
-	${FC} ME_general.o commutators.o IMSRG_tools.o HFQDmod.o operators.o magnus_IMSRG.o -o ${p1} ${LIBS}
+magnus: ME_general.o commutators.o IMSRG_tools.o HFQDmod.o operators.o EOM_IMSRG.o magnus_IMSRG.o  
+	${FC} ME_general.o commutators.o IMSRG_tools.o HFQDmod.o operators.o EOM_IMSRG.o magnus_IMSRG.o -o ${p1} ${LIBS}
 
 tda: ME_general.o commutators.o adams_ode.o IMSRG_tools.o HFQDmod.o operators.o TDA_IMSRG.o 
 	${FC} ME_general.o commutators.o IMSRG_tools.o HFQDmod.o adams_ode.o operators.o TDA_IMSRG.o -o ${p5} ${LIBS}

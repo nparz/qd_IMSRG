@@ -76,13 +76,6 @@ emaxstr = adjustl(emaxstr)
   e2nd = eHF +MBPT2( HS )   
   print*, 'Hartree-Fock Energy: ', eHF
 !=================================================================  
-  print*, HS%stoe
-  print*
-  print*, HS%eh
-  print*
-  print*, HS%ep
-  print*
-
 !================================================================
 !<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 !================================================================
@@ -110,7 +103,7 @@ emaxstr = adjustl(emaxstr)
 
  ! call system('rm CI_spectrum.dat') 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  call run_simple_CI('n') 
+ ! call run_simple_CI('n') 
 !  stop
 !!! set parameters for solver ~~~~~~~~~~~~~~~~~~~~~~~
   rel=1e-8       ! relative error
@@ -123,8 +116,12 @@ emaxstr = adjustl(emaxstr)
   ocrit = 10.d0  ! previous critera
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+  numstates = 10
+  
+  ! call calculate_excited_states( HS%Mltarg, HS%Mstarg, numstates , HS ) 
 
- 
+
+  ! stop
 !==================================================================  
  !  if you want to plot the evolution with "s"
 
@@ -165,23 +162,22 @@ end if
      crit = abs( (crit - HS%E0 )/crit ) 
      write(*,'(I5,3(e14.6))') pr,s,HS%E0,crit
      pr = pr + 1 
-    !  if (pr == 5) then
-    !     print*, 'CI:', s
-    ! call run_simple_CI('n')
+   !   if (pr == 1) then
+  !   call run_simple_CI('n')
     !  pr = 0 
-    !  end if 
+     ! end if 
   !call print_matrix(HS%fph)
   end do
     
   print*, 'CI:', s
-!  call run_simple_CI('y') 
+  call run_simple_CI('y') 
   print*, 'final s:', s
 
-  numstates = 5
+  numstates = 20
   
-  !call calculate_excited_states( HS%Mltarg, HS%Mstarg, numstates , HS ) 
-  call calculate_1p_attached( HS%Mltarg, HS%Mstarg, numstates , HS ) 
-  call calculate_1h_removed( HS%Mltarg, HS%Mstarg, numstates , HS ) 
+  call calculate_excited_states( HS%Mltarg, HS%Mstarg, numstates , HS ) 
+ ! call calculate_1p_attached( HS%Mltarg, HS%Mstarg, numstates , HS ) 
+ ! call calculate_1h_removed( HS%Mltarg, HS%Mstarg, numstates , HS ) 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !=================================================================
 !================================================================
