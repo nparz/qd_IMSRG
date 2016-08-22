@@ -18,13 +18,14 @@ subroutine construct_two_particle_HF_BASIS( n , hw , emax , record ,coefs,pert)
   !!! coefs stores the sp eigenvectors in columns , ordered by  scheme in arrange states
   
   real(8), parameter :: al=1.d0, bet=0.d0
-  integer :: i,j,k,l,n,emax,Mbas,gbas,ghol,gpart,info,cnt,q,qt
+  integer :: i,j,k,l,n,emax,Mbas,gbas,ghol,gpart,info,cnt,q,qt,ist,kron_del,k1,l1
+  integer :: a,b,c,d,ii,jj,Nmax,i1,j1,n1,n2,n3,n4,m1,m2,m3,m4,s1,s2,s3,s4,iix,jjx
   integer,allocatable,dimension(:,:) ::  qnums
   integer,allocatable,dimension(:) :: ordering
   real(8),dimension(emax*(emax+1),emax*(emax+1)) :: coefs
-  real(8),allocatable,dimension(:,:) :: T,V,H,F,den
+  real(8),allocatable,dimension(:,:) :: T,V,H,F,den,Vstor
   real(8),allocatable,dimension(:) :: eold,ord,work,eig
-  real(8) :: hw,crit,MBPT2,HF_E2,eHF
+  real(8) :: hw,crit,MBPT2,HF_E2,eHF,Vdir,Vexch,v_int
   real(8), optional :: pert
   character(5) :: hwstr,nstr,emaxstr
   character(35) :: fname
@@ -91,19 +92,84 @@ subroutine construct_two_particle_HF_BASIS( n , hw , emax , record ,coefs,pert)
   nstr=adjustl(nstr)
   emaxstr=adjustl(emaxstr)
 
-  fname='../TBMEfiles/TBME_'//trim(hwstr)//'_'//trim(emaxstr)//'.dat'
-
-  fname=trim(fname) 
+ ! fname='../TBMEfiles/TBME_'//trim(hwstr)//'_'//trim(emaxstr)//'.dat'
+  fname='../TBMEfiles/ME.dat' 
+  
+  !fname=trim(fname) 
 
   open(unit=37,file=fname)
 
+  Nmax = (emax+1)*(emax)/2 
+
+  allocate(vstor(Nmax**2,Nmax**2)) 
+  vstor = 0.d0
+  do 
+     read(37,*,iostat=ist) n1,m1,n2,m2,n3,m3,n4,m4,Vdir 
+     
+     if (ist >0) stop 'failfile' 
+     if (ist < 0) exit
+     
+     if (2*n1+abs(m1) > emax-1) cycle
+     if (2*n2+abs(m2) > emax-1) cycle
+     if (2*n3+abs(m3) > emax-1) cycle
+     if (2*n4+abs(m4) > emax-1) cycle
+
+     a = nm_index(n1,m1)
+     b = nm_index(n2,m2)
+     c = nm_index(n3,m3)
+     d = nm_index(n4,m4)     
+
+     II = ab_index(a,b,Nmax)
+     JJ = ab_index(c,d,Nmax) 
+     Vstor(II,JJ) = Vdir*sqrt(hw)
+     Vstor(JJ,II) = Vdir*sqrt(hw)
+  end do 
+     
+    
   do q=1,ints%nblock
      allocate(ints%mat(q)%Vpppp(ints%mat(q)%npp,ints%mat(q)%npp))
      do i=1,ints%mat(q)%npp
+        i1 = ints%mat(q)%qnpp(i,1)
+        j1 = ints%mat(q)%qnpp(i,2)
+        
+        n1 = qnums(i1,1)
+        m1 = qnums(i1,2)
+        s1 = qnums(i1,3)
+        
+        n2 = qnums(j1,1)
+        m2 = qnums(j1,2)
+        s2 = qnums(j1,3)
+        
+        a = nm_index(n1,m1)
+        b = nm_index(n2,m2)
+        II = ab_index(a,b,Nmax)
+        IIx = ab_index(b,a,Nmax) 
+        
         do j=1,ints%mat(q)%npp
-
-           read(37,*) ints%mat(q)%Vpppp(i,j)
-
+           k1 = ints%mat(q)%qnpp(j,1)
+           l1 = ints%mat(q)%qnpp(j,2)
+           
+           n3 = qnums(k1,1)
+           m3 = qnums(k1,2)
+           s3 = qnums(k1,3)
+           
+           n4 = qnums(l1,1)
+           m4 = qnums(l1,2)
+           s4 = qnums(l1,3)
+           
+           c = nm_index(n3,m3)
+           d = nm_index(n4,m4)
+           
+           JJ = ab_index(c,d,Nmax)
+           Vdir = Vstor(II,JJ) 
+           JJx = ab_index(d,c,Nmax)
+           Vexch = Vstor(II,JJx)            
+           if (abs(Vexch)<1e-10)Vexch = Vstor(IIx,JJ)  
+            
+           ints%mat(q)%Vpppp(i,j) = &
+                kron_del(s1,s3)*kron_del(s2,s4)*Vdir &
+               -kron_del(s1,s4)*kron_del(s2,s3)*Vexch
+           
         end do
      end do
      if (present(pert)) then 
@@ -206,9 +272,9 @@ subroutine construct_V(V,ints,den,m)
         do j=1,m
            do  l= 1,m 
               
-              !print*, a,b,c,d
+
               V(i,k) = V(i,k) + den(l,j) * v_elem(j,i,l,k,ints) 
-              !print*, 'horse'
+
         
            end do 
         end do 

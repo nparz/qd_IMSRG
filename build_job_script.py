@@ -201,7 +201,7 @@ elif ty == 'T':
                     secs = '0'+secs
                     
                 walltime = hrs+':'+mns+':'+secs
-                
+                walltime = '04:00:00'
                 nodes = '1'
                 cores = '8'
                 fl.write( '#!/bin/sh \n\n' ) 
@@ -217,11 +217,12 @@ elif ty == 'T':
                 fl.write( 'cd $HOME/qd_imsrg/src/ \n\n')
                 fl.write( 'export OMP_NUM_THREADS='+cores+'\n\n' ) 
                 
+                carg = n+' '+hw+'d0'+' '+R+' 0 1 20 \n\n'
                 if (gs.lower() == 'y'):
                     
                     fl.write('./gs_decouple ' + carg ) 
                 else:
-                    carg = carg[:-4]+' '+ml+' '+ms+' '+cut+'\n\n'
+                    carg = carg+' '+ml+' '+ms+' '+cut+'\n\n'
                     fl.write('./ex_decouple ' + carg ) 
                 
                     
@@ -302,7 +303,7 @@ elif ty == 'Q':
                 secs = '0'+secs
                     
             walltime = hrs+':'+mns+':'+secs
-                
+            walltime = '08:00:00'    
             nodes = '1'
             cores = '8'
             fl.write( '#!/bin/sh \n\n' ) 

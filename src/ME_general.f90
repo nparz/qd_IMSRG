@@ -41,7 +41,7 @@ type full_ham
    integer,allocatable,dimension(:) :: eh,ep,stoe
    !!! eh(i) gives the STATES ORDER position of the 
    !!! ith state in ENERGY ORDER
-   real(8) :: E0,h3(220,220)
+   real(8) :: E0,h3(220,220),hospace
    !!! 0-body flow energy
    integer :: nblock,nbody,Msp,herm,neq,cutshell,Mltarg,Mstarg 
    !!! number of blocks, bodies, sp states
@@ -1378,7 +1378,7 @@ subroutine convertF(F,rec,m,qn,w)
   
   rec%states=qn
   rec%eig=w
-  print*, rec%eig
+
   do i=1,n
      rec%eh(i)=i
      rec%stoe(i)=i
@@ -2002,6 +2002,27 @@ real(8) function mat_2_norm( r )
   
  end function
 !=====================================================
+integer function nm_index(n,ml) 
+  implicit none 
+  
+  integer :: n,ml,R
+  
+  R = abs(ml)+2*n 
+  
+  nm_index = R*(R+1)/2 + (R+ml)/2 + 1 
+
+end function nm_index
+!======================================================
+integer function ab_index(a,b,N) 
+  implicit none
+  
+  integer :: a,b,N
+  
+  ab_index = N*(a-1)+b
+
+end function ab_index
+  
+  
 end module  
 !=====================================================
 integer function count_states(ml,ms,qn,m)

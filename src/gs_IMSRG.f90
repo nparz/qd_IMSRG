@@ -58,6 +58,8 @@ m = emax*(emax+1) !basis
 
 write(hwstr,'(f5.2)') hw
 
+HS%hospace = hw
+
 nstr = adjustl(nstr)
 hwstr= adjustl(hwstr) 
 emaxstr = adjustl(emaxstr)
@@ -76,12 +78,6 @@ emaxstr = adjustl(emaxstr)
   e2nd = eHF +MBPT2( HS )   
   print*, 'Hartree-Fock Energy: ', eHF
 !=================================================================  
-  print*, HS%stoe
-  print*
-  print*, HS%eh
-  print*
-  print*, HS%ep
-  print*
 
 !================================================================
 !<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
@@ -110,7 +106,7 @@ emaxstr = adjustl(emaxstr)
 
  ! call system('rm CI_spectrum.dat') 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  call run_simple_CI('n') 
+!  call run_simple_CI('n') 
 !  stop
 !!! set parameters for solver ~~~~~~~~~~~~~~~~~~~~~~~
   rel=1e-8       ! relative error

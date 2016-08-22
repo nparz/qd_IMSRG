@@ -53,11 +53,15 @@ subroutine calculate_1p_Attached( Ml, Ms, Numstates, HS )
   type(full_ham) :: HS 
   real(8),dimension(Numstates) :: eigs,norms
   integer :: Ml,Ms,Numstates,i,q,holes,parts,dm
-   
+  integer :: nshell,nfill
+  
+  
   holes = HS%nbody
   parts = HS%msp-holes
   dm = parts+holes*parts*(parts-1)/2 
   
+  nshell = (sqrt(4.d0*HS%msp+1.d0)-1)/2.d0
+  nfill =  (sqrt(4.d0*HS%nbody+1.d0)-1)/2.d0
 !  allocate(ladder_ops(numstates,dm)) 
    
  ! ladder_ops = 0.d0 
@@ -78,6 +82,10 @@ subroutine calculate_1p_Attached( Ml, Ms, Numstates, HS )
   do i = 1, Numstates
      write(*,'(3(f16.9))') eigs(i) ,eigs(i)+HS%E0,norms(i)
   end do
+
+  open(unit=39,file='../output/EOM_particle_attached.dat',position='append')
+  write(39,'(4(I5),f8.2,4(f17.9))'   )  nshell,nfill,ML,MS,HS%hospace,HS%E0,eigs(1),eigs(1)+HS%E0,norms(1)
+  close(39) 
   
 end subroutine calculate_1p_Attached
  
@@ -89,12 +97,15 @@ subroutine calculate_1h_Removed( Ml, Ms, Numstates, HS )
   
   type(full_ham) :: HS 
   real(8),dimension(Numstates) :: eigs,norms
-  integer :: Ml,Ms,Numstates,i,q,holes,parts,dm
+  integer :: Ml,Ms,Numstates,i,q,holes,parts,dm,nshell,nfill
    
   holes = HS%nbody
   parts = HS%msp-holes
   dm = holes+parts*holes*(holes-1)/2 
   
+  nshell = (sqrt(4.d0*HS%msp+1.d0)-1)/2.d0
+  nfill =  (sqrt(4.d0*HS%nbody+1.d0)-1)/2.d0
+! 
   print* 
   write(*,'((A64),(I2),(A4),(I2))') 'EXECUTING EOM CALCULATION'// &
        ' FOR PARTICLE REMOVED STATES: Ml=',Ml,' Ms=',Ms  
@@ -111,6 +122,9 @@ subroutine calculate_1h_Removed( Ml, Ms, Numstates, HS )
   do i = 1, Numstates
      write(*,'(3(f16.9))') eigs(i) ,eigs(i)+HS%E0,norms(i)
   end do
+  open(unit=39,file='../output/EOM_particle_removed.dat',position='append')
+  write(39,'(4(I5),f8.2, 4(f17.9))'   )  nshell,nfill,ML,MS,HS%hospace,HS%E0,eigs(1),eigs(1)+HS%E0,norms(1)
+  close(39) 
    
 end subroutine calculate_1h_Removed
 
@@ -203,7 +217,7 @@ subroutine LANCZOS_DIAGONALIZE(OP,Vecs,nev)
   
   ido = 0  ! status integer is 0 at start
   BMAT = 'I' ! standard eigenvalue problem (N for generalized) 
-  which = 'SM' ! compute smallest eigenvalues in magnitude ('SA') is algebraic. 
+  which = 'SA' ! compute smallest eigenvalues in magnitude ('SA') is algebraic. 
   tol = 0.0E+00 ! error tolerance? (wtf zero?) 
   info = 0
   ncv = 2*nev ! number of lanczos vectors I guess
@@ -268,7 +282,7 @@ end subroutine LANCZOS_DIAGONALIZE
 !==================================================================
 subroutine LANCZOS_1p_ATTACHED(OP,nev,dm,d,norm_1p)    
   
-  integer :: N 
+  integer :: N ,dm
   integer,intent(in) :: nev
   type(full_ham) :: op
   real(8),dimension(nev,dm) :: Vecs
@@ -277,7 +291,7 @@ subroutine LANCZOS_1p_ATTACHED(OP,nev,dm,d,norm_1p)
   real(8),dimension(nev) :: d,norm_1p
   integer :: i,j,ix,jx,lwork,info,ido,ncv,ldv,iparam(11),ipntr(11),q,II,JJ
   integer :: ishift,mxiter,nb,nconv,mode,np,lworkl,ldz,p,h,sps,tps,jp,jh
-  integer :: li,lj,lb,la,si,sj,sa,sb,Ml,Ms,h1,h2,p1,p2,a,b,dm
+  integer :: li,lj,lb,la,si,sj,sa,sb,Ml,Ms,h1,h2,p1,p2,a,b
   real(8) ::  x,tol,y,sigma,t1,t2
   character(1) :: BMAT,HOWMNY 
   character(2) :: which
@@ -400,7 +414,7 @@ end subroutine LANCZOS_1p_ATTACHED
 !==================================================================
 subroutine LANCZOS_1h_REMOVED(OP,nev,dm,d,norm_1p)    
   
-  integer :: N 
+  integer :: N ,dm
   integer,intent(in) :: nev
   type(full_ham) :: op
   real(8),dimension(nev,dm) :: Vecs
@@ -409,7 +423,7 @@ subroutine LANCZOS_1h_REMOVED(OP,nev,dm,d,norm_1p)
   real(8),dimension(nev) :: d,norm_1p
   integer :: i,j,ix,jx,lwork,info,ido,ncv,ldv,iparam(11),ipntr(11),q,II,JJ
   integer :: ishift,mxiter,nb,nconv,mode,np,lworkl,ldz,p,h,sps,tps,jp,jh
-  integer :: li,lj,lb,la,si,sj,sa,sb,Ml,Ms,h1,h2,p1,p2,a,b,dm
+  integer :: li,lj,lb,la,si,sj,sa,sb,Ml,Ms,h1,h2,p1,p2,a,b
   real(8) ::  x,tol,y,sigma,t1,t2
   character(1) :: BMAT,HOWMNY
   character(2) :: which,ncvstr
