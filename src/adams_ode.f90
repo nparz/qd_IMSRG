@@ -4,7 +4,7 @@ module adams_ode
     
 contains
 
-subroutine ode ( f, neqn, y, rx, t, tout, relerr, abserr, iflag, work, iwork )
+subroutine ode ( f, neqn, y, rx,rcc,bcc, t, tout, relerr, abserr, iflag, work, iwork )
 
 !*****************************************************************************80
 !
@@ -173,6 +173,7 @@ subroutine ode ( f, neqn, y, rx, t, tout, relerr, abserr, iflag, work, iwork )
   real ( kind = 8 ) work(100+21*neqn)
   real ( kind = 8 ) y(neqn)
   type(full_ham) :: rx
+  type(cc_mat) :: rcc,bcc
 
   iwt = iyy + neqn
   ip = iwt + neqn
@@ -186,7 +187,7 @@ subroutine ode ( f, neqn, y, rx, t, tout, relerr, abserr, iflag, work, iwork )
     nornd = ( iwork(2) /= -1 )
   end if
 
-  call de ( f, neqn, y, rx, t, tout, relerr, abserr, iflag, work(iyy), &
+  call de ( f, neqn, y, rx,rcc,bcc, t, tout, relerr, abserr, iflag, work(iyy), &
     work(iwt), work(ip), work(iyp), work(iypout), work(iphi), &
     work(ialpha), work(ibeta), work(isig), work(iv), work(iw), work(ig), &
     phase1, work(ipsi), work(ix), work(ih), work(ihold), start, &
@@ -214,7 +215,7 @@ subroutine ode ( f, neqn, y, rx, t, tout, relerr, abserr, iflag, work, iwork )
   return
 end subroutine 
 
-subroutine de ( f, neqn, y, rx, t, tout, relerr, abserr, iflag, yy, wt, p, yp, &
+subroutine de ( f, neqn, y, rx,rcc,bcc, t, tout, relerr, abserr, iflag, yy, wt, p, yp, &
   ypout, phi, alpha, beta, sig, v, w, g, phase1, psi, x, h, hold, start, &
   told, delsgn, ns, nornd, k, kold, isnold )
 
@@ -398,7 +399,7 @@ subroutine de ( f, neqn, y, rx, t, tout, relerr, abserr, iflag, yy, wt, p, yp, &
   real ( kind = 8 ) ypout(neqn)
   real ( kind = 8 ) yy(neqn)
   type(full_ham) :: rx 
-!
+  type(cc_mat) :: rcc,bcc
 !  Test for improper parameters.
 !
   fouru = 4.0D+00 * epsilon ( fouru )
@@ -495,7 +496,7 @@ subroutine de ( f, neqn, y, rx, t, tout, relerr, abserr, iflag, yy, wt, p, yp, &
     if ( isn <= 0 .and. abs ( tout - x ) < fouru * abs ( x ) ) then
       h = tout - x
       call repackage( rx, yy, neqn ) 
-      call f ( x, yp, rx)
+      call f ( x, yp, rx,rcc,bcc)
       y(1:neqn) = yy(1:neqn) + h * yp(1:neqn)
       iflag = 2
       t = tout
@@ -523,7 +524,7 @@ subroutine de ( f, neqn, y, rx, t, tout, relerr, abserr, iflag, yy, wt, p, yp, &
     h = sign ( min ( abs ( h ), abs ( tend - x ) ), h )
     wt(1:neqn) = releps * abs ( yy(1:neqn) ) + abseps
 
-    call step ( x, yy, f, rx, neqn, h, eps, wt, start, &
+    call step ( x, yy, f, rx,rcc,bcc, neqn, h, eps, wt, start, &
       hold, k, kold, crash, phi, p, yp, psi, &
       alpha, beta, sig, v, w, g, phase1, ns, nornd )
 !
@@ -558,7 +559,7 @@ subroutine de ( f, neqn, y, rx, t, tout, relerr, abserr, iflag, yy, wt, p, yp, &
   return
 end subroutine 
 
-subroutine step ( x, y, f, rx, neqn, h, eps, wt, start, hold, k, kold, crash, &
+subroutine step ( x, y, f, rx,rcc,bcc, neqn, h, eps, wt, start, hold, k, kold, crash, &
   phi, p, yp, psi, alpha, beta, sig, v, w, g, phase1, ns, nornd )
 
 !*****************************************************************************80
@@ -782,7 +783,7 @@ subroutine step ( x, y, f, rx, neqn, h, eps, wt, start, hold, k, kold, crash, &
   real ( kind = 8 ) y(neqn)
   real ( kind = 8 ) yp(neqn)
   type(full_ham) :: rx
-
+  type(cc_mat) :: rcc,bcc
   twou = 2.0D+00 * epsilon ( twou )
   fouru = 2.0D+00 * twou
 !
@@ -819,7 +820,7 @@ subroutine step ( x, y, f, rx, neqn, h, eps, wt, start, hold, k, kold, crash, &
   if ( start ) then
 
     call repackage( rx, y, neqn ) 
-    call f ( x, yp , rx)
+    call f ( x, yp , rx,rcc,bcc)
     phi(1:neqn,1) = yp(1:neqn)
     phi(1:neqn,2) = 0.0D+00
     total = sqrt ( sum ( ( yp(1:neqn) / wt(1:neqn) )**2 ) )
@@ -972,7 +973,7 @@ subroutine step ( x, y, f, rx, neqn, h, eps, wt, start, hold, k, kold, crash, &
     x = x + h
     absh = abs ( h )
     call repackage( rx, p, neqn ) 
-    call f ( x, yp, rx)
+    call f ( x, yp, rx,rcc,bcc)
 !
 !  Estimate the errors at orders K, K-1 and K-2.
 !
@@ -1094,7 +1095,7 @@ subroutine step ( x, y, f, rx, neqn, h, eps, wt, start, hold, k, kold, crash, &
   end if
 
   call repackage( rx, y, neqn ) 
-  call f ( x, yp , rx )
+  call f ( x, yp , rx,rcc,bcc )
 !
 !  Update differences for the next step.
 !

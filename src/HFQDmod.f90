@@ -6,7 +6,7 @@ module HFQDmod
 
 contains  
   
-subroutine construct_two_particle_HF_BASIS( n , hw , emax , record ,coefs,pert) 
+subroutine construct_two_particle_HF_BASIS( n , hw , emax , record ,coefs,HCC,pert) 
   use ME_general
   implicit none 
   
@@ -30,6 +30,7 @@ subroutine construct_two_particle_HF_BASIS( n , hw , emax , record ,coefs,pert)
   character(5) :: hwstr,nstr,emaxstr
   character(35) :: fname
   type(full_ham) :: record,ints
+  type(cc_mat) :: HCC 
   type(full_sp_block_mat) :: Fblock
  
 
@@ -93,18 +94,18 @@ subroutine construct_two_particle_HF_BASIS( n , hw , emax , record ,coefs,pert)
   emaxstr=adjustl(emaxstr)
 
  ! fname='../TBMEfiles/TBME_'//trim(hwstr)//'_'//trim(emaxstr)//'.dat'
-  fname='../TBMEfiles/ME.dat' 
+  fname='../TBMEfiles/ME.bin' 
   
   !fname=trim(fname) 
 
-  open(unit=37,file=fname)
+  open(unit=37,file=fname,form='unformatted',access='stream')
 
   Nmax = (emax+1)*(emax)/2 
 
   allocate(vstor(Nmax**2,Nmax**2)) 
   vstor = 0.d0
   do 
-     read(37,*,iostat=ist) n1,m1,n2,m2,n3,m3,n4,m4,Vdir 
+     read(37,iostat=ist) n1,m1,n2,m2,n3,m3,n4,m4,Vdir 
      
      if (ist >0) stop 'failfile' 
      if (ist < 0) exit
@@ -125,7 +126,8 @@ subroutine construct_two_particle_HF_BASIS( n , hw , emax , record ,coefs,pert)
      Vstor(JJ,II) = Vdir*sqrt(hw)
   end do 
      
-    
+  close(37)
+  
   do q=1,ints%nblock
      allocate(ints%mat(q)%Vpppp(ints%mat(q)%npp,ints%mat(q)%npp))
      do i=1,ints%mat(q)%npp
@@ -233,7 +235,9 @@ subroutine construct_two_particle_HF_BASIS( n , hw , emax , record ,coefs,pert)
    call new_VMAT(ints,record,mbas)
 
    call convertF(F,record,mbas,qnums,eig)
-  
+
+   call build_cross_coupled(record,HCC,qnums)
+   
    deallocate(qnums)
    do q=1,ints%nblock
       deallocate(ints%mat(q)%Vpppp)
@@ -245,6 +249,7 @@ subroutine construct_two_particle_HF_BASIS( n , hw , emax , record ,coefs,pert)
    deallocate(den)
    deallocate(F)
    deallocate(eig)
+
 
 end subroutine 
 !==========================================

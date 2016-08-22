@@ -12,8 +12,7 @@ subroutine calculate_excited_states( Ml, Ms, Numstates, HS )
   
   type(full_ham) :: HS 
   type(full_ham),allocatable,dimension(:) :: ladder_ops 
-  integer :: Ml,Ms,Numstates,i,q,j,k
-  real(8) :: DE(2),intermediate_norm,W,sm
+  integer :: Ml,Ms,Numstates,i,q
   
   allocate(ladder_ops(numstates)) 
   
@@ -38,23 +37,13 @@ subroutine calculate_excited_states( Ml, Ms, Numstates, HS )
   write(*,'((A21),(f16.9))') 'Ground State Energy: ',HS%E0 
   print*
   print*, 'EXCITED STATE ENERGIES:'
-  print*, '================================================================================'
-  print*, '      dE                dE + dE[T]              E_0 + dE+dE[T]         n(1p1h)  ' 
-  print*, '================================================================================'
+  print*, '=================================='
+  print*, '      dE             E_0 + dE'
+  print*, '=================================='
   do i = 1, Numstates
-     DE =  EOM_PERTURBATIVE_TRIPLES(HS,ladder_ops(i)) 
-     intermediate_norm = 1.d0 + DE(2) 
-  
-     write(*,'(4(f16.9))')  ladder_ops(i)%E0 , ladder_ops(i)%E0+DE(1) , ladder_ops(i)%E0+HS%E0+DE(1) , sum(ladder_ops(i)%fph**2)
-
-     write(45,'(2(I5),4(f16.9))') Ml , Ms, ladder_ops(i)%E0+DE(1) , ladder_ops(i)%E0+HS%E0 , &
-          sum(ladder_ops(i)%fph**2)/intermediate_norm , (1-sum(ladder_ops(i)%fph**2))/intermediate_norm
-     
+     write(*,'(3(f16.9))') ladder_ops(i)%E0 ,ladder_ops(i)%E0+HS%E0,sum(ladder_ops(i)%fph**2)
   end do
-  
-
-  
-
+     
 end subroutine 
 
 
@@ -602,6 +591,7 @@ subroutine matvec_prod(N,OP,Q_op,Qout,w1,w2,v,w)
          if ( Ml .ne. Op%Mltarg ) cycle
          if ( Ms .ne. Op%Mstarg ) cycle   
          
+        ! print*, ix,jx 
          Qout%fph(ix,jx) = HQ_comm_1b(ix+h,jx,Op,Q_op) 
          
      end do

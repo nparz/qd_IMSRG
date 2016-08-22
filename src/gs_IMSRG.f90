@@ -21,6 +21,7 @@ program gs_IMSRG
   real(8) :: get_crit,pert
   type(full_ham) :: HS,ETA , HD, w1,w2,H0
   type(full_sp_block_mat) :: TDA,OLD
+  type(cc_mat) :: HCC,ETACC
   character(5) :: hwstr,nstr,emaxstr,mlstr,msstr,cutstr
   character(2) :: nhs,nps,nbs
   character(7) :: genstr
@@ -70,14 +71,18 @@ emaxstr = adjustl(emaxstr)
   allocate(coefs(m,m))
   If ( len(trim(adjustl(pstr))) > 0 ) then 
      read(pstr,'(f9.6)') pert
-     call construct_two_particle_HF_basis( n , hw , emax , HS, coefs ,pert)
+     call construct_two_particle_HF_basis( n , hw , emax , HS, coefs,HCC ,pert)
   else
-     call construct_two_particle_HF_basis( n , hw , emax , HS, coefs )
+     call construct_two_particle_HF_basis( n , hw , emax , HS, coefs,HCC )
   end if 
   eHF=HF_E2( HS )
   e2nd = eHF +MBPT2( HS )   
   print*, 'Hartree-Fock Energy: ', eHF
+
+  call copy_cc(HCC,ETACC) 
+  
 !=================================================================  
+
 !================================================================
 !<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 !================================================================
@@ -105,8 +110,7 @@ emaxstr = adjustl(emaxstr)
 
  ! call system('rm CI_spectrum.dat') 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- ! call run_simple_CI('n') 
-
+!  call run_simple_CI('n') 
 !  stop
 !!! set parameters for solver ~~~~~~~~~~~~~~~~~~~~~~~
   rel=1e-8       ! relative error
@@ -119,12 +123,8 @@ emaxstr = adjustl(emaxstr)
   ocrit = 10.d0  ! previous critera
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  numstates = 10
-  
-  ! call calculate_excited_states( HS%Mltarg, HS%Mstarg, numstates , HS ) 
 
-
-  ! stop
+ 
 !==================================================================  
  !  if you want to plot the evolution with "s"
 
@@ -153,7 +153,7 @@ end if
      sm =0.d0 
      crit=HS%E0 
      call vectorize(HS,cur_vec,neq)
-     call ode( dGam, neq , cur_vec, HS, s, s+stp, rel, abse, flag, work2, iwork ) 
+     call ode( dGam, neq , cur_vec, HS,HCC,ETACC, s, s+stp, rel, abse, flag, work2, iwork ) 
      call repackage(HS,cur_vec,neq)     
      
      if (run_tda) then 
@@ -165,22 +165,23 @@ end if
      crit = abs( (crit - HS%E0 )/crit ) 
      write(*,'(I5,3(e14.6))') pr,s,HS%E0,crit
      pr = pr + 1 
-   !   if (pr == 1) then
-  !   call run_simple_CI('n')
+    !  if (pr == 5) then
+    !     print*, 'CI:', s
+    ! call run_simple_CI('n')
     !  pr = 0 
-     ! end if 
+    !  end if 
   !call print_matrix(HS%fph)
   end do
     
   print*, 'CI:', s
-  call run_simple_CI('y') 
+!  call run_simple_CI('y') 
   print*, 'final s:', s
 
-  numstates = 20
+  numstates = 5
   
-  call calculate_excited_states( HS%Mltarg, HS%Mstarg, numstates , HS ) 
- ! call calculate_1p_attached( HS%Mltarg, HS%Mstarg, numstates , HS ) 
- ! call calculate_1h_removed( HS%Mltarg, HS%Mstarg, numstates , HS ) 
+  !call calculate_excited_states( HS%Mltarg, HS%Mstarg, numstates , HS ) 
+  call calculate_1p_attached( HS%Mltarg, HS%Mstarg, numstates , HS ) 
+  call calculate_1h_removed( HS%Mltarg, HS%Mstarg, numstates , HS ) 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !=================================================================
 !================================================================
@@ -321,7 +322,7 @@ end program
 !================================================
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !================================================
-subroutine dGam(t,yp,H) 
+subroutine dGam(t,yp,H,HCC,ETACC) 
   ! calculates the derivatives inside the solver
   use ME_general
   use IMSRG_tools
@@ -332,7 +333,7 @@ subroutine dGam(t,yp,H)
   integer :: i,j,neq,bytes,n,m,p,q,r,s,px,qx,rx,sx
   real(8) :: yp(*)
   type(full_ham) :: H,HD,ETA,DER,w1,w2
-   
+   type(cc_mat) :: HCC,ETACC
 !!! we need the full_ham structure to compute the derivatives at max speed
 !!! so we allocate a bunch of those to work in 
 
@@ -341,10 +342,14 @@ subroutine dGam(t,yp,H)
   call allocate_everything( H , w1 ) !! workspace for computing
   call allocate_everything( H , w2 )  !! transpose space for non-symmetric
 
+  call calc_cc(H,HCC)
   ETA%herm = -1
+  HCC%herm = 1.d0
 ! construct the generator...
   call build_white(ETA,H)
+  call calc_cc(ETA,ETACC)
 
+  ETACC%herm = -1.d0
   m=H%msp
   n=H%nbody
   neq=H%neq
@@ -362,7 +367,7 @@ subroutine dGam(t,yp,H)
   
 !! two body derivatives
   call xcommutator_122(ETA,H,DER)
-  call xcommutator_222(ETA,H,DER,w1) 
+  call xcommutator_222(ETA,H,DER,w1,HCC,ETACC) 
 
 !! re-write in a way that shampine and gordon can handle
   call vectorize(DER,yp,neq)

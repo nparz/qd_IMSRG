@@ -699,21 +699,28 @@ end if
 end subroutine 
 !============================================================================
 !============================================================================
-subroutine xcommutator_222(r1,r2,r3,w1) 
+subroutine xcommutator_222(r1,r2,r3,w1,HCC,ETACC) 
+  use ME_general
   implicit none 
   
   integer :: i,j,k,q,nh,np,nb,n,m,a,II,JJ
   integer :: pre,h1,h2,h3,h4,p1,p2,p3,p4
+  integer :: r31,r24,r32,r14,r41,r23,r42,r13
+  integer :: q31,q24,q32,q14,q41,q23,q42,q13
   type(full_ham) :: r1,r2,r3,w1,w2
+  type(cc_mat) :: HCC,ETACC,XCC,YCC
+  real(8) :: X,Y,Z 
   
+  call construct_cc_ints(ETACC,HCC,XCC,YCC)
   
 !!! matrix mults
-
-n=r2%nbody
-m=r2%msp
+  
+  n=r2%nbody
+  m=r2%msp
   
 
-!$omp parallel do private(nh,np,nb,pre,h1,h2,h3,h4,p1,p2,p3,p4,II,JJ,i,a)  
+  !$omp parallel do private(nh,np,nb,pre,h1,h2,h3,h4,p1,p2,p3,p4,II,JJ,i,a,X) &
+  !$omp& shared(XCC,YCC,r1,r2,r3)  
 do q=1,r2%nblock
    
    nh=r2%mat(q)%nhh
@@ -738,8 +745,34 @@ do JJ=1,nh
         h3=(r2%mat(q)%qnhh(JJ,1))
         h4=(r2%mat(q)%qnhh(JJ,2))
 
-        call sub_222_hhhh(r1,r2,r3,q,h1,h2,h3,h4,II,JJ,n,m) 
+        q31 = HCC%map(r2%msp*(h3-1)+h1,1) 
+        r31 = HCC%map(r2%msp*(h3-1)+h1,2) 
+        q24 = HCC%map(r2%msp*(h2-1)+h4,1) 
+        r24 = HCC%map(r2%msp*(h2-1)+h4,2)        
 
+        q32 = HCC%map(r2%msp*(h3-1)+h2,1) 
+        r32 = HCC%map(r2%msp*(h3-1)+h2,2) 
+        q14 = HCC%map(r2%msp*(h1-1)+h4,1) 
+        r14 = HCC%map(r2%msp*(h1-1)+h4,2)        
+
+        q41 = HCC%map(r2%msp*(h4-1)+h1,1) 
+        r41 = HCC%map(r2%msp*(h4-1)+h1,2) 
+        q23 = HCC%map(r2%msp*(h2-1)+h3,1) 
+        r23 = HCC%map(r2%msp*(h2-1)+h3,2)        
+
+        q42 = HCC%map(r2%msp*(h4-1)+h2,1) 
+        r42 = HCC%map(r2%msp*(h4-1)+h2,2) 
+        q13 = HCC%map(r2%msp*(h1-1)+h3,1) 
+        r13 = HCC%map(r2%msp*(h1-1)+h3,2)        
+
+        X=  &
+             XCC%mat(q31)%X(r31,r24) - XCC%mat(q32)%X(r32,r14) + &
+             XCC%mat(q42)%X(r42,r13) - XCC%mat(q41)%X(r41,r23)
+        X= X - &
+             YCC%mat(q42)%X(r42,r13) + YCC%mat(q41)%X(r41,r23) - &
+             YCC%mat(q31)%X(r31,r24) + YCC%mat(q32)%X(r32,r14)
+
+        r3%mat(q)%Vhhhh(II,JJ)=r3%mat(q)%Vhhhh(II,JJ)+X*pre
    end do 
 end do
 
@@ -755,9 +788,36 @@ do JJ=1,np
         p2=(r2%mat(q)%qnpp(II,2))
         p3=(r2%mat(q)%qnpp(JJ,1))
         p4=(r2%mat(q)%qnpp(JJ,2))
-           
-        call sub_222_pppp(r1,r2,r3,q,p1,p2,p3,p4,II,JJ,n,m) 
 
+        q31 = HCC%map(r2%msp*(p3-1)+p1,1) 
+        r31 = HCC%map(r2%msp*(p3-1)+p1,2) 
+        q24 = HCC%map(r2%msp*(p2-1)+p4,1) 
+        r24 = HCC%map(r2%msp*(p2-1)+p4,2)        
+
+        q32 = HCC%map(r2%msp*(p3-1)+p2,1) 
+        r32 = HCC%map(r2%msp*(p3-1)+p2,2) 
+        q14 = HCC%map(r2%msp*(p1-1)+p4,1) 
+        r14 = HCC%map(r2%msp*(p1-1)+p4,2)        
+
+        q41 = HCC%map(r2%msp*(p4-1)+p1,1) 
+        r41 = HCC%map(r2%msp*(p4-1)+p1,2) 
+        q23 = HCC%map(r2%msp*(p2-1)+p3,1) 
+        r23 = HCC%map(r2%msp*(p2-1)+p3,2)        
+
+        q42 = HCC%map(r2%msp*(p4-1)+p2,1) 
+        r42 = HCC%map(r2%msp*(p4-1)+p2,2) 
+        q13 = HCC%map(r2%msp*(p1-1)+p3,1) 
+        r13 = HCC%map(r2%msp*(p1-1)+p3,2)        
+
+        X=  &
+             XCC%mat(q31)%X(r31,r24) - XCC%mat(q32)%X(r32,r14) + &
+             XCC%mat(q42)%X(r42,r13) - XCC%mat(q41)%X(r41,r23)
+        X= X - &
+             YCC%mat(q42)%X(r42,r13) + YCC%mat(q41)%X(r41,r23) - &
+             YCC%mat(q31)%X(r31,r24) + YCC%mat(q32)%X(r32,r14)
+
+        r3%mat(q)%Vpppp(II,JJ)=r3%mat(q)%Vpppp(II,JJ)+X*pre
+        
    end do 
 end do 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -773,8 +833,33 @@ do JJ=1,nh
         h3=(r2%mat(q)%qnhh(JJ,1))
         h4=(r2%mat(q)%qnhh(JJ,2))
 
-        call sub_222_pphh(r1,r2,r3,q,p1,p2,h3,h4,II,JJ,n,m) 
+        q31 = HCC%map(r2%msp*(h3-1)+p1,1) 
+        r31 = HCC%map(r2%msp*(h3-1)+p1,2) 
+        q24 = HCC%map(r2%msp*(p2-1)+h4,1) 
+        r24 = HCC%map(r2%msp*(p2-1)+h4,2)        
 
+        q32 = HCC%map(r2%msp*(h3-1)+p2,1) 
+        r32 = HCC%map(r2%msp*(h3-1)+p2,2) 
+        q14 = HCC%map(r2%msp*(p1-1)+h4,1) 
+        r14 = HCC%map(r2%msp*(p1-1)+h4,2)        
+
+        q41 = HCC%map(r2%msp*(h4-1)+p1,1) 
+        r41 = HCC%map(r2%msp*(h4-1)+p1,2) 
+        q23 = HCC%map(r2%msp*(p2-1)+h3,1) 
+        r23 = HCC%map(r2%msp*(p2-1)+h3,2)        
+
+        q42 = HCC%map(r2%msp*(h4-1)+p2,1) 
+        r42 = HCC%map(r2%msp*(h4-1)+p2,2) 
+        q13 = HCC%map(r2%msp*(p1-1)+h3,1) 
+        r13 = HCC%map(r2%msp*(p1-1)+h3,2)        
+
+        X = XCC%mat(q31)%X(r31,r24) - XCC%mat(q32)%X(r32,r14) + &
+             XCC%mat(q42)%X(r42,r13) - XCC%mat(q41)%X(r41,r23)
+        
+        X= X - YCC%mat(q42)%X(r42,r13) + YCC%mat(q41)%X(r41,r23) - &
+             YCC%mat(q31)%X(r31,r24) + YCC%mat(q32)%X(r32,r14)
+
+        r3%mat(q)%Vpphh(II,JJ)=r3%mat(q)%Vpphh(II,JJ)+X*pre
    end do 
 end do 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -791,8 +876,35 @@ do JJ=1,nb
         pre=1
         if ( p3 == (r2%mat(q)%qnph(JJ,2)) ) pre= -1
      
+        q31 = HCC%map(r2%msp*(p3-1)+p1,1) 
+        r31 = HCC%map(r2%msp*(p3-1)+p1,2) 
+        q24 = HCC%map(r2%msp*(p2-1)+h4,1) 
+        r24 = HCC%map(r2%msp*(p2-1)+h4,2)        
 
-        call sub_222_ppph(r1,r2,r3,q,p1,p2,p3,h4,II,JJ,n,m,pre)
+        q32 = HCC%map(r2%msp*(p3-1)+p2,1) 
+        r32 = HCC%map(r2%msp*(p3-1)+p2,2) 
+        q14 = HCC%map(r2%msp*(p1-1)+h4,1) 
+        r14 = HCC%map(r2%msp*(p1-1)+h4,2)        
+
+        q41 = HCC%map(r2%msp*(h4-1)+p1,1) 
+        r41 = HCC%map(r2%msp*(h4-1)+p1,2) 
+        q23 = HCC%map(r2%msp*(p2-1)+p3,1) 
+        r23 = HCC%map(r2%msp*(p2-1)+p3,2)        
+
+        q42 = HCC%map(r2%msp*(h4-1)+p2,1) 
+        r42 = HCC%map(r2%msp*(h4-1)+p2,2) 
+        q13 = HCC%map(r2%msp*(p1-1)+p3,1) 
+        r13 = HCC%map(r2%msp*(p1-1)+p3,2)        
+
+        X=  &
+             XCC%mat(q31)%X(r31,r24) - XCC%mat(q32)%X(r32,r14) + &
+             XCC%mat(q42)%X(r42,r13) - XCC%mat(q41)%X(r41,r23)
+
+        X= X - &
+             YCC%mat(q42)%X(r42,r13) + YCC%mat(q41)%X(r41,r23) - &
+             YCC%mat(q31)%X(r31,r24) + YCC%mat(q32)%X(r32,r14)
+
+        r3%mat(q)%Vppph(II,JJ)=r3%mat(q)%Vppph(II,JJ)+X*pre
 
    end do 
 end do 
@@ -809,8 +921,37 @@ do JJ=1,nh
         if ( p1 == (r2%mat(q)%qnph(II,2)) ) pre= -1
         h3=(r2%mat(q)%qnhh(JJ,1))
         h4=(r2%mat(q)%qnhh(JJ,2))
-       
-        call sub_222_phhh(r1,r2,r3,q,p1,h2,h3,h4,II,JJ,n,m,pre)
+
+
+        q31 = HCC%map(r2%msp*(h3-1)+p1,1) 
+        r31 = HCC%map(r2%msp*(h3-1)+p1,2) 
+        q24 = HCC%map(r2%msp*(h2-1)+h4,1) 
+        r24 = HCC%map(r2%msp*(h2-1)+h4,2)        
+
+        q32 = HCC%map(r2%msp*(h3-1)+h2,1) 
+        r32 = HCC%map(r2%msp*(h3-1)+h2,2) 
+        q14 = HCC%map(r2%msp*(p1-1)+h4,1) 
+        r14 = HCC%map(r2%msp*(p1-1)+h4,2)        
+
+        q41 = HCC%map(r2%msp*(h4-1)+p1,1) 
+        r41 = HCC%map(r2%msp*(h4-1)+p1,2) 
+        q23 = HCC%map(r2%msp*(h2-1)+h3,1) 
+        r23 = HCC%map(r2%msp*(h2-1)+h3,2)        
+
+        q42 = HCC%map(r2%msp*(h4-1)+h2,1) 
+        r42 = HCC%map(r2%msp*(h4-1)+h2,2) 
+        q13 = HCC%map(r2%msp*(p1-1)+h3,1) 
+        r13 = HCC%map(r2%msp*(p1-1)+h3,2)        
+
+        X=  &
+             XCC%mat(q31)%X(r31,r24) - XCC%mat(q32)%X(r32,r14) + &
+             XCC%mat(q42)%X(r42,r13) - XCC%mat(q41)%X(r41,r23)
+
+        X= X - &
+             YCC%mat(q42)%X(r42,r13) + YCC%mat(q41)%X(r41,r23) - &
+             YCC%mat(q31)%X(r31,r24) + YCC%mat(q32)%X(r32,r14)
+
+        r3%mat(q)%Vphhh(II,JJ)=r3%mat(q)%Vphhh(II,JJ)+X*pre
       
    end do 
 end do
@@ -820,7 +961,7 @@ end do
 
 do JJ=1,nb
    do II=1,nb
-      
+
         p1=max((r2%mat(q)%qnph(II,1)),(r2%mat(q)%qnph(II,2)))
         h2=min((r2%mat(q)%qnph(II,1)),(r2%mat(q)%qnph(II,2)))
         pre=1
@@ -829,7 +970,35 @@ do JJ=1,nb
         h4=min((r2%mat(q)%qnph(JJ,1)),(r2%mat(q)%qnph(JJ,2)))
         if ( p3 == (r2%mat(q)%qnph(JJ,2)) ) pre= -1 * pre
         
-        call sub_222_phph(r1,r2,r3,q,p1,h2,p3,h4,II,JJ,n,m,pre)
+        q31 = HCC%map(r2%msp*(p3-1)+p1,1) 
+        r31 = HCC%map(r2%msp*(p3-1)+p1,2) 
+        q24 = HCC%map(r2%msp*(h2-1)+h4,1) 
+        r24 = HCC%map(r2%msp*(h2-1)+h4,2)        
+
+        q32 = HCC%map(r2%msp*(p3-1)+h2,1) 
+        r32 = HCC%map(r2%msp*(p3-1)+h2,2) 
+        q14 = HCC%map(r2%msp*(p1-1)+h4,1) 
+        r14 = HCC%map(r2%msp*(p1-1)+h4,2)        
+
+        q41 = HCC%map(r2%msp*(h4-1)+p1,1) 
+        r41 = HCC%map(r2%msp*(h4-1)+p1,2) 
+        q23 = HCC%map(r2%msp*(h2-1)+p3,1) 
+        r23 = HCC%map(r2%msp*(h2-1)+p3,2)        
+
+        q42 = HCC%map(r2%msp*(h4-1)+h2,1) 
+        r42 = HCC%map(r2%msp*(h4-1)+h2,2) 
+        q13 = HCC%map(r2%msp*(p1-1)+p3,1) 
+        r13 = HCC%map(r2%msp*(p1-1)+p3,2)        
+
+        X=  &
+             XCC%mat(q31)%X(r31,r24) - XCC%mat(q32)%X(r32,r14) + &
+             XCC%mat(q42)%X(r42,r13) - XCC%mat(q41)%X(r41,r23)
+
+        X= X - &
+             YCC%mat(q42)%X(r42,r13) + YCC%mat(q41)%X(r41,r23) - &
+             YCC%mat(q31)%X(r31,r24) + YCC%mat(q32)%X(r32,r14)
+
+        r3%mat(q)%Vphph(II,JJ)=r3%mat(q)%Vphph(II,JJ)+X*pre
 
    end do 
 end do
@@ -1278,6 +1447,33 @@ do i=1,n
 end do 
 
 end subroutine
+!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!===============================================================
+subroutine calc_cc(H,HCC)
+  implicit none
+
+  type(full_ham) :: H
+  type(cc_mat) :: HCC
+  integer :: i,j,k,l,q,r,nb
+
+
+  do q = 1, HCC%nblocks
+
+     do r = 1, HCC%mat(q)%block_r
+
+        i = HCC%mat(q)%qnab(r,1)
+        j = HCC%mat(q)%qnab(r,2)
+        
+        do nb = 1, HCC%mat(q)%block_nb
+
+           k = HCC%mat(q)%qnhp(nb,1)
+           l = HCC%mat(q)%qnhp(nb,2)
+           
+           HCC%mat(q)%X(r,nb) = v_elem(j,k,i,l,H)
+        end do
+     end do
+  end do
+end subroutine calc_cc
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !===============================================================
 subroutine xcommutator_223(r1,r2,r3) 
@@ -2669,6 +2865,6 @@ real(8) function EOM_off_diagonal(Q1,H,Q2)
   
   EOM_off_diagonal = sm
 end function EOM_off_diagonal
-           
-end module
+
+end module commutators
 

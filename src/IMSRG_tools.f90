@@ -5,60 +5,60 @@ module IMSRG_tools
     
   contains
 
-subroutine build_wegner(gen, H)
-  implicit none 
+! subroutine build_wegner(gen, H)
+!   implicit none 
   
-  type(full_ham) ::  gen, H,HD,wkspc,wks2
-  integer :: i,j,a,b,n,m,q,nh,np,nb,pre,kron_del
-  integer :: p1,p2,p3,p4,h1,h2,h3,h4,II,JJ
+!   type(full_ham) ::  gen, H,HD,wkspc,wks2
+!   integer :: i,j,a,b,n,m,q,nh,np,nb,pre,kron_del
+!   integer :: p1,p2,p3,p4,h1,h2,h3,h4,II,JJ
   
-  gen%herm = -1
-  n = H%nbody
-  m = H%msp 
+!   gen%herm = -1
+!   n = H%nbody
+!   m = H%msp 
 
-  call allocate_everything(H,HD)
-  call allocate_everything(H,wkspc)
-  call allocate_everything(H,wks2) 
-!! DEFINE H-DIAGONAL !!================
+!   call allocate_everything(H,HD)
+!   call allocate_everything(H,wkspc)
+!   call allocate_everything(H,wks2) 
+! !! DEFINE H-DIAGONAL !!================
 
-  do i=1,n
-  HD%Fhh(i,i) = H%Fhh(i,i)
-  end do 
+!   do i=1,n
+!   HD%Fhh(i,i) = H%Fhh(i,i)
+!   end do 
   
-  do i=1,m-n
-  HD%Fpp(i,i) = H%Fpp(i,i)
-  end do 
+!   do i=1,m-n
+!   HD%Fpp(i,i) = H%Fpp(i,i)
+!   end do 
 
-  do q=1,H%nblock
+!   do q=1,H%nblock
 
-     do i=1,H%mat(q)%nhh
+!      do i=1,H%mat(q)%nhh
         
-        HD%mat(q)%Vhhhh(i,i)=H%mat(q)%Vhhhh(i,i)
+!         HD%mat(q)%Vhhhh(i,i)=H%mat(q)%Vhhhh(i,i)
         
-     end do 
+!      end do 
 
-     do i=1,H%mat(q)%npp
+!      do i=1,H%mat(q)%npp
         
-        HD%mat(q)%Vpppp(i,i)=H%mat(q)%Vpppp(i,i)
+!         HD%mat(q)%Vpppp(i,i)=H%mat(q)%Vpppp(i,i)
         
-     end do 
+!      end do 
      
-     do i=1,H%mat(q)%nph
+!      do i=1,H%mat(q)%nph
         
-        HD%mat(q)%Vphph(i,i)=H%mat(q)%Vphph(i,i)
+!         HD%mat(q)%Vphph(i,i)=H%mat(q)%Vphph(i,i)
         
-     end do 
+!      end do 
     
-  end do 
+!   end do 
 
-  call xcommutator_111(HD,H,GEN) 
-  call xcommutator_121(HD,H,GEN) 
-  call xcommutator_221(HD,H,GEN,wkspc,wks2) 
+!   call xcommutator_111(HD,H,GEN) 
+!   call xcommutator_121(HD,H,GEN) 
+!   call xcommutator_221(HD,H,GEN,wkspc,wks2) 
 
-  call xcommutator_122(HD,H,GEN)
-  call xcommutator_222(HD,H,GEN,wkspc) 
+!   call xcommutator_122(HD,H,GEN)
+!   call xcommutator_222(HD,H,GEN,wkspc,) 
 
-end subroutine 
+! end subroutine 
 !==============================================
 !==============================================
 subroutine build_specific_space( gen, rec ) 
@@ -434,7 +434,35 @@ subroutine build_white( gen, rec )
 end subroutine
 !========================================
 !========================================
-subroutine allocate_everything(rec,r2) 
+subroutine copy_cc(HCC,BCC)
+  implicit none
+
+  type(cc_mat) :: HCC,BCC
+  integer :: q 
+  
+  BCC%nblocks = HCC%nblocks
+  allocate(BCC%mat(HCC%nblocks)) 
+  allocate(BCC%map(size(HCC%map(:,1)),2))
+  BCC%map = HCC%map
+  
+  do q = 1, HCC%nblocks
+
+     BCC%mat(q)%block_r = HCC%mat(q)%block_r 
+     BCC%mat(q)%block_nb = HCC%mat(q)%block_nb
+
+     allocate(BCC%mat(q)%X(BCC%mat(q)%block_r,BCC%mat(q)%block_nb))
+     allocate(BCC%mat(q)%qnab(BCC%mat(q)%block_r,2))
+     allocate(BCC%mat(q)%qnhp(BCC%mat(q)%block_nb,2))     
+     BCC%mat(q)%qnab = HCC%mat(q)%qnab
+     BCC%mat(q)%qnhp = HCC%mat(q)%qnhp
+     BCC%mat(q)%X = 0.d0 
+  end do
+
+end subroutine copy_cc
+!========================================
+!========================================
+
+  subroutine allocate_everything(rec,r2) 
   implicit none 
   
   type(full_ham) :: rec,r2

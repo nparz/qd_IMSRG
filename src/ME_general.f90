@@ -10,6 +10,19 @@ module ME_general
 !!! NOTE: STATES ORDER is important because LAPACK cannot comprehend blocks
 !!! unless they are ordered so that physical blocks appear in the diagonal. 
 
+  type cc_block
+     real(8),allocatable,dimension(:,:) :: X
+     integer,allocatable,dimension(:,:) :: qnab,qnhp
+     integer :: block_r ,block_nb
+  end type cc_block
+
+  type cc_mat
+     type(cc_block),allocatable,dimension(:) :: mat
+     integer,allocatable,dimension(:,:) :: map
+     integer :: nblocks
+     real(8) :: herm
+  end type cc_mat
+  
 type block
    integer :: nhh,npp,nph,ntot
    !!! number of hh,pp,ph and total states
@@ -345,7 +358,94 @@ subroutine import_hamiltonian(H,fname)
    end do 
 
 close(20)
-end subroutine         
+end subroutine import_hamiltonian
+!================================================
+subroutine build_cross_coupled(H,HCC,qn)
+  implicit none
+
+  type(full_ham) :: H
+  type(cc_mat) :: HCC
+  integer,dimension(H%msp,3) :: qn
+  integer :: m1,m2,s1,s2,ML,MS,i,j
+  integer :: MLmax,MSmax,q,r,nb
+
+  MLmax = 2*maxval(qn(:,2)) 
+  MSmax = 2
+
+  HCC%nblocks = 10*MLmax+5 
+  allocate(HCC%map(H%msp**2,2))
+  allocate(HCC%mat(10*MLmax+5))
+  HCC%map = 0 
+  q = 1 
+  do ML=-1*MLmax,MLmax
+     do MS = -1*MSmax,MSmax
+
+        r = 0
+        nb = 0
+        do i = 1, H%msp
+           m1 = qn(i,2)
+           s1 = qn(i,3)
+           
+           do j = 1, H%msp
+              m2 = qn(j,2)
+              s2 = qn(j,3)              
+
+              if (m1 - m2 .ne. ML) cycle
+              if (s1 - s2 .ne. MS) cycle       
+              
+              r = r + 1
+              HCC%map( H%Msp *(i-1) + j,1) = q
+              HCC%map( H%Msp *(i-1) + j,2) = r
+              
+              if (i .le. H%Nbody) then
+                 if (j .gt. H%Nbody ) then
+                    nb = nb + 1
+                 end if
+              end if
+           end do
+
+        end do
+
+        allocate(HCC%mat(q)%qnab(r,2))
+        allocate(HCC%mat(q)%qnhp(nb,2)) 
+        allocate(HCC%mat(q)%X(r,nb))       
+        HCC%mat(q)%X = 0.d0 
+        HCC%mat(q)%block_r = r
+        HCC%mat(q)%block_nb = nb
+        
+        r = 0
+        nb = 0
+        do i = 1, H%msp
+           m1 = qn(i,2)
+           s1 = qn(i,3)
+
+           do j = 1, H%msp
+              m2 = qn(j,2)
+              s2 = qn(j,3)              
+
+              if (m1 - m2 .ne. ML) cycle
+              if (s1 - s2 .ne. MS) cycle       
+              
+              r = r + 1
+              HCC%mat(q)%qnab(r,1) = i
+              HCC%mat(q)%qnab(r,2) = j
+             
+             if (i .le. H%Nbody) then
+                 if (j .gt. H%Nbody ) then
+                    nb = nb + 1
+                    HCC%mat(q)%qnhp(nb,1) = i
+                    HCC%mat(q)%qnhp(nb,2) = j
+                 end if
+              end if
+           end do
+
+        end do
+
+        q = q + 1
+     end do
+  end do
+
+end subroutine build_cross_coupled 
 !================================================
 subroutine build_block_matrix(qn,emax,F) 
   implicit none
@@ -817,6 +917,41 @@ subroutine reorder(c,w,qn,m)
  end do 
          
 end subroutine  
+!========================================
+!========================================
+
+subroutine construct_cc_ints(ETACC,HCC,XCC,YCC)
+  implicit none
+
+  type(cc_mat) :: HCC,ETACC,XCC,YCC
+  integer :: q ,nb,r
+  real(8) :: bet =0.d0
+  
+  XCC%nblocks = HCC%nblocks
+  YCC%nblocks = HCC%nblocks
+  
+  allocate(YCC%mat(HCC%nblocks)) 
+  allocate(XCC%mat(HCC%nblocks)) 
+  do q = 1, HCC%nblocks
+
+     r= HCC%mat(q)%block_r
+     nb= HCC%mat(q)%block_nb
+     XCC%mat(q)%block_r = r
+     YCC%mat(q)%block_r = r
+     
+     allocate(XCC%mat(q)%X(r,r))
+     allocate(YCC%mat(q)%X(r,r)) 
+     XCC%mat(q)%X = 0.d0
+     YCC%mat(q)%X = 0.d0     
+     if ((r == 0 ) .or. (nb==0)) cycle
+ 
+     call dgemm('N','T',r,r,nb,HCC%herm,ETACC%mat(q)%X,r,HCC%mat(q)%X,r,bet,XCC%mat(q)%X,r) 
+     call dgemm('N','T',r,r,nb,ETACC%herm,HCC%mat(q)%X,r,ETACC%mat(q)%X,r,bet,YCC%mat(q)%X,r)
+  end do
+
+end subroutine construct_cc_ints
+
+
 !==============================================      
 subroutine reindex(m,g,n,gst,pst,qn,emax,eig,rec)
   !!! rewrites states into a tp index
