@@ -1132,21 +1132,21 @@ subroutine sub_222_hhhh(r1,r2,r3,q,h1,h2,h3,h4,II,JJ,n,m)
   integer :: h1,h2,h3,h4,q
   type(full_ham) :: r1,r2,r3
   
-do i=1,n
-   do a=n+1,m
+  do i=1,n
+     do a=n+1,m
 
-      r3%mat(q)%Vhhhh(II,JJ) = r3%mat(q)%Vhhhh(II,JJ) +  &
-           v_elem(i,h1,a,h3,r1) * v_elem(a,h2,i,h4,r2) - &
-           v_elem(a,h1,i,h3,r1) * v_elem(i,h2,a,h4,r2) - &
-           v_elem(i,h2,a,h3,r1) * v_elem(a,h1,i,h4,r2) - &
-           v_elem(i,h1,a,h4,r1) * v_elem(a,h2,i,h3,r2) + &
-           v_elem(a,h2,i,h3,r1) * v_elem(i,h1,a,h4,r2) + &
-           v_elem(a,h1,i,h4,r1) * v_elem(i,h2,a,h3,r2) + &
-           v_elem(i,h2,a,h4,r1) * v_elem(a,h1,i,h3,r2) - &
-           v_elem(a,h2,i,h4,r1) * v_elem(i,h1,a,h3,r2)
+        r3%mat(q)%Vhhhh(II,JJ) = r3%mat(q)%Vhhhh(II,JJ) +  &
+             v_elem(i,h1,a,h3,r1) * v_elem(a,h2,i,h4,r2) - &
+             v_elem(a,h1,i,h3,r1) * v_elem(i,h2,a,h4,r2) - &
+             v_elem(i,h2,a,h3,r1) * v_elem(a,h1,i,h4,r2) - &
+             v_elem(i,h1,a,h4,r1) * v_elem(a,h2,i,h3,r2) + &
+             v_elem(a,h2,i,h3,r1) * v_elem(i,h1,a,h4,r2) + &
+             v_elem(a,h1,i,h4,r1) * v_elem(i,h2,a,h3,r2) + &
+             v_elem(i,h2,a,h4,r1) * v_elem(a,h1,i,h3,r2) - &
+             v_elem(a,h2,i,h4,r1) * v_elem(i,h1,a,h3,r2)
       
-   end do 
-end do 
+     end do
+  end do
 
 end subroutine 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1356,7 +1356,7 @@ subroutine xcommutator_223(r1,r2,r3)
     end do 
 
     
-end subroutine  
+end subroutine xcommutator_223
 !==========================================
 !==========================================
 subroutine xcommutator_232(r1,r2,r3) 
@@ -1630,7 +1630,7 @@ end if
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     end do 
 
-end subroutine 
+end subroutine xcommutator_232
 !================================================
 !================================================
 subroutine xcommutator_132(r1,r2,r3)
@@ -2263,10 +2263,6 @@ real(8) function HQ_comm_2p1h(a,b,i,H,v)
   HQ_comm_2p1h = sm 
 
 end function HQ_comm_2p1h
-
-
-
-
 !==================================================
 !==================================================
 real(8) function HQ_comm_2h1p(i,j,a,H,v) 
@@ -2308,10 +2304,371 @@ real(8) function HQ_comm_2h1p(i,j,a,H,v)
   HQ_comm_2h1p = sm 
 
 end function 
+!===============================================================
+!===============================================================
+real(8) function W_223(p,q,r,s,t,u,r1,r2) 
+  implicit none 
+  
+  integer :: p,q,r,s,t,u,a,i,II,JJ,M3,m,n
+  type(full_ham) :: r1,r2
+  real(8) :: sm
+  
+  m = r1%msp
+  n = r1%nbody
+  
+  sm = 0.d0
+  do a = n+1,m
+     
+     sm = sm + v_elem(p,q,a,t,r1)*Q_elem(a,r,s,u,r2) - &
+          v_elem(p,q,a,u,r1)*Q_elem(a,r,s,t,r2) - &
+          v_elem(p,q,a,s,r1)*Q_elem(a,r,t,u,r2) - &
+          v_elem(r,q,a,t,r1)*Q_elem(a,p,s,u,r2) + &
+          v_elem(r,q,a,s,r1)*Q_elem(a,p,t,u,r2) + &
+          v_elem(r,q,a,u,r1)*Q_elem(a,p,s,t,r2) - &
+          v_elem(p,r,a,t,r1)*Q_elem(a,q,s,u,r2) + &
+          v_elem(p,r,a,s,r1)*Q_elem(a,q,t,u,r2) + &
+          v_elem(p,r,a,u,r1)*Q_elem(a,q,s,t,r2)
+     
+  end do
+      
+  do i = 1, n
+          
+     sm = sm - (v_elem(i,q,s,t,r1)*Q_elem(p,r,i,u,r2) - &
+          v_elem(i,q,s,u,r1)*Q_elem(p,r,i,t,r2) - &
+          v_elem(i,q,u,t,r1)*Q_elem(p,r,i,s,r2) - &
+          v_elem(i,p,s,t,r1)*Q_elem(q,r,i,u,r2) + &
+          v_elem(i,p,s,u,r1)*Q_elem(q,r,i,t,r2) + &
+          v_elem(i,p,u,t,r1)*Q_elem(q,r,i,s,r2) - &
+          v_elem(i,r,s,t,r1)*Q_elem(p,q,i,u,r2) + &
+          v_elem(i,r,s,u,r1)*Q_elem(p,q,i,t,r2) + &
+          v_elem(i,r,u,t,r1)*Q_elem(p,q,i,s,r2) ) 
+  end do
+  
+  W_223 = sm 
+end function W_223
+!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!===============================================================
+function EOM_PERTURBATIVE_TRIPLES(H,Q) result( DE ) 
+  implicit none 
+  
+  integer :: ML,MS,n,m,la,lab,labc,a,b,c,i,j,k
+  integer :: sa,sab,sabc,li,lij,lijk,si,sij,sijk
+  type(full_ham),intent(IN) :: H,Q
+  real(8) :: deltaE,fii,fjj,fkk,faa,fbb,fcc,Gabab,Gijij
+  real(8) :: Gacac,Gbcbc,Gikik,Gjkjk,Giaia,Gjaja,Gkaka
+  real(8) :: Gibib,Gjbjb,Gkbkb,Gicic,Gjcjc,Gkckc,W,denom,n3p3h,X
+  real(8) :: DE(2)
+  
+  ML=H%MLtarg
+  MS=H%MStarg
+  m = H%msp
+  n = H%nbody
+ 
+  deltaE = 0.d0 
+  n3p3h = 0.d0 
+  do a = n+1,m 
+     la = H%states(a,2)
+     sa = H%states(a,3)
+     faa = f_elem(a,a,H)
+     
+     do b = a+1,m
+        lab = la+H%states(b,2)
+        sab = sa+H%states(b,3)
+        fbb = f_elem(b,b,H)
+        Gabab = v_elem(a,b,a,b,H) 
+        
+        do c = b+1,m
+           labc = lab + H%states(c,2) 
+           sabc = sab + H%states(c,3) 
+  !         print*, ml,ms,labc,sabc
+           
+ !          IF ( labc .ne. ml ) cycle
+  !         IF ( sabc .ne. ms ) cycle
+           
+
+           fcc = f_elem(c,c,H) 
+           Gacac = v_elem(a,c,a,c,H)
+           Gbcbc = v_elem(b,c,b,c,H) 
 
   
 
+           do i = 1,n 
+              li = H%states(i,2)
+              si = H%states(i,3)
+              fii = f_elem(i,i,H)
+             
+              Giaia = v_elem(i,a,i,a,H) 
+              Gibib = v_elem(i,b,i,b,H)
+              Gicic = v_elem(i,c,i,c,H)              
+             
+              
+              do j = i+1,n
+                 lij = li+H%states(j,2)
+                 sij = si+H%states(j,3)
+                 fjj = f_elem(j,j,H)
+                 Gijij = v_elem(i,j,i,j,H)      
+                 
+                 Gjaja = v_elem(j,a,j,a,H) 
+                 Gjbjb = v_elem(j,b,j,b,H)
+                 Gjcjc = v_elem(j,c,j,c,H)              
+      
+      
+                 do k = j+1,n
+                    lijk = lij + H%states(k,2) 
+                    sijk = sij + H%states(k,3) 
+     
+                    IF ( labc-lijk .ne. Ml  ) cycle
+                    IF ( sabc-sijk .ne. MS ) cycle
+
+                    fkk = f_elem(k,k,H)
+                    Gikik = v_elem(i,k,i,k,H)
+                    Gjkjk = v_elem(j,k,j,k,H)
+
+                    Gkaka = v_elem(k,a,k,a,H) 
+                    Gkbkb = v_elem(k,b,k,b,H)
+                    Gkckc = v_elem(k,c,k,c,H)              
+      
+                    
+                    
+                    W=W_223(a,b,c,i,j,k,H,Q) 
+                    denom = Q%E0-(faa+fbb+fcc-fii-fjj-fkk+Gabab+&
+                         Gacac+Gbcbc+Gijij+Gikik+Gjkjk-Giaia&
+                         -Gibib-Gicic-Gjaja-Gjbjb-Gjcjc-Gkaka-&
+                         Gkbkb-Gkckc) 
+                    X = W/denom 
+
+                    deltaE = deltaE + W*X
+                    n3p3h = n3p3h + X*X 
+                    
+                 end do 
+              end do
+           end do
+        end do
+     end do
+  end do
+         
+  DE(1) = deltaE
+  DE(2) = n3p3h 
   
+end function EOM_PERTURBATIVE_TRIPLES
+
+
+real(8) function EOM_off_diagonal(Q1,H,Q2)
+  implicit none 
   
+  integer :: ML,MS,n,m,la,lab,labc,a,b,c,i,j,k,l,d
+  integer :: sa,sab,sabc,li,lij,lijk,si,sij,sijk
+  type(full_ham),intent(IN) :: H,Q1,Q2
+  real(8) :: sm ,smx
+
+  n = H%nbody
+  m = H%msp
+  ! 1p1h and 1p1h 
+
+  sm = 0.d0 
+  do i = 1, n 
+     do a = n+1,m 
+        
+        do j = 1, n
+           do b = n+1,m 
+              
+              smx = v_elem(a,j,i,b,H)  
+              if (i==j) then 
+                 smx = smx + f_elem(a,b,H)
+              end if
+              
+              if (a==b) then 
+                 smx = smx - f_elem(j,i,H)
+              end if
+              
+              sm = sm + Qf_elem(a,i,Q1) * Qf_elem(b,j,Q2) * smx 
+              
+           end do
+        end do
+     end do
+  end do
+
+  ! 1p1h and 2p2h 
+  
+  do i = 1, n
+     do j = i+1, n
+        do a = n+1,m
+           do b = a+1, m
+              
+              do k = 1, n
+                 do c = n+1,m
+                    
+                    smx = 0.d0 
+                    if (i==k) then 
+                       smx = smx + v_Elem(a,b,c,j,H) 
+                       if (b==c) then 
+                          smx = smx+f_elem(a,j,H) 
+                       end if 
+
+                       if (a==c) then 
+                          smx = smx+f_elem(b,j,H) 
+                       end if                       
+                    end if
+                      
+                    if (j==k) then 
+                       smx = smx - v_elem(a,b,c,i,H)
+                       if (b==c) then 
+                          smx = smx + f_elem(a,i,H)
+                       end if
+
+                       if (a==c) then 
+                          smx = smx + f_elem(b,i,H)
+                       end if
+                    end if 
+                    
+                    if (a==c) then 
+                       smx = smx - v_Elem(k,b,i,j,H)
+                    end if 
+                    
+                    if (b==c) then 
+                       smx = smx + v_elem(k,a,i,j,H) 
+                    end if 
+                    
+                    sm = sm + smx*(Qf_elem(c,k,Q1)*Q_Elem(a,b,i,j,Q2) + &
+                         Qf_elem(c,k,Q2)*Q_Elem(a,b,i,j,Q1) ) 
+                    
+                 end do
+              end do
+           end do
+        end do
+     end do
+  end do
+  
+  do i = 1, n
+     do j = i+1,n
+        do a = n+1,m
+           do b = a+1,m
+              
+              
+              do k = 1, n
+                 do l = k+1,n
+                    do c = n+1,m
+                       do d = c+1,m
+                          
+                          smx = 0.d0 
+
+                          if ( i == k ) then 
+                      
+                             if ( j == l) then                                 
+                                smx = smx+ v_Elem(a,b,c,d,H)
+                             end if 
+                             
+                             if ( b == d) then 
+                                smx = smx - v_elem(a,l,c,j,H) 
+                             end if 
+                             
+                             if ( b == c) then 
+                                smx = smx + v_elem(a,l,d,j,H) 
+                             end if 
+                             
+                             if ( a == d) then 
+                                smx = smx + v_elem(b,l,c,j,H) 
+                             end if 
+                             
+                             if ( a == c) then 
+                                smx = smx - v_elem(b,l,d,j,H) 
+                             end if
+ 
+                          end if
+                          
+                          if ( j == k ) then 
+                             
+                             if ( b == d) then 
+                                smx = smx + v_elem(a,l,c,i,H) 
+                             end if 
+                             
+                             if ( b == c) then 
+                                smx = smx - v_elem(a,l,d,i,H) 
+                             end if 
+                             
+                             if ( a == d) then 
+                                smx = smx - v_elem(b,l,c,i,H) 
+                             end if 
+                             
+                             if ( a == c) then 
+                                smx = smx + v_elem(b,l,d,i,H) 
+                             end if 
+                          end if
+                             
+                          
+                          if (  i == l ) then 
+
+                             if ( j == k) then                                 
+                                smx = smx - v_Elem(a,b,c,d,H)
+                             end if 
+                             
+                             if ( b == d) then 
+                                smx = smx + v_elem(a,k,c,j,H) 
+                             end if 
+                             
+                             if ( b == c) then 
+                                smx = smx - v_elem(a,k,d,j,H) 
+                             end if 
+                             
+                             if ( a == d) then 
+                                smx = smx - v_elem(b,k,c,j,H) 
+                             end if 
+                             
+                             if ( a == c) then 
+                                smx = smx + v_elem(b,k,d,j,H) 
+                             end if 
+                          end if
+  
+                          if ( j == l ) then 
+                             
+                             if ( b == d) then 
+                                smx = smx - v_elem(a,k,c,i,H) 
+                             end if 
+                             
+                             if ( b == c) then 
+                                smx = smx + v_elem(a,k,d,i,H) 
+                             end if 
+                             
+                             if ( a == d) then 
+                                smx = smx + v_elem(b,k,c,i,H) 
+                             end if 
+                             
+                             if ( a == c) then 
+                                smx = smx - v_elem(b,k,d,i,H) 
+                             end if 
+                          
+                          end if
+                          
+                          if (a==c) then 
+                             if (b==d) then 
+                                
+                                smx =smx+v_elem(i,j,k,l,H)
+                          
+                             end if
+                          end if 
+                          
+                          if (a==d) then 
+                             if (b==c) then 
+                                
+                                smx =smx-v_elem(i,j,k,l,H)
+                          
+                             end if
+                          end if
+                          
+                          sm = sm + smx * Q_elem(a,b,i,j,Q1) * Q_elem(c,d,k,l,Q2) 
+                          
+                          
+                       end do
+                    end do
+                 end do
+              end do
+           end do
+        end do
+     end do
+  end do
+  
+  EOM_off_diagonal = sm
+end function EOM_off_diagonal
+           
 end module
 

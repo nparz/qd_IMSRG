@@ -324,41 +324,32 @@ real(8) function MBPT2(rec)
   implicit none 
   
   real(8),parameter :: al=1.d0,bet=0.d0
-  integer :: i,j,k,nh,np
-  real(8) ::  sm
+  integer :: i,j,k,nh,np,II,JJ,N,p1,p2,h1,h2
+  real(8) ::  sm,num,denom,f12
   type(full_ham) :: rec
-  real(8),allocatable,dimension(:,:) :: v1
   
+  N = rec%nbody
   sm=0.d0
   do i=1,rec%nblock
+     nh = rec%mat(i)%nhh
+     np = rec%mat(i)%npp
+     
+     do II = 1,np 
+        p1 = rec%mat(i)%qnpp(II,1)
+        p2 = rec%mat(i)%qnpp(II,2)
 
-        nh=rec%mat(i)%nhh
-        np=rec%mat(i)%npp
+        f12 = rec%fpp(p1-n,p1-n) + rec%fpp(p2-n,p2-n) 
         
-        if (np*nh==0) cycle 
-        if ((np==1) .or. (nh==1)) then 
-        
-           
-           sm=sm+sum(rec%mat(i)%Vpphh*rec%mat(i)%Dpphh)
-           
-        else 
-           
-        allocate(v1(nh,nh))
+        do JJ = 1, nh 
+           h1 = rec%mat(i)%qnhh(JJ,1)
+           h2 = rec%mat(i)%qnhh(JJ,2)
 
-        call dgemm('T','N',nh,nh,np,al,rec%mat(i)%Vpphh &
-                    ,np,rec%mat(i)%Dpphh,np,bet,v1,nh)
-        
-           !!! only contribution is from pp - hh  elements 
-           !!! the 1/4 is not there because there is
-           !!! no double counting in this scheme
-        
-        do j=1,nh
-        sm = sm + v1(j,j)
-        end do 
-        
-        deallocate(v1)
-        
-        end if 
+           denom = rec%fhh(h1,h1) + rec%fhh(h2,h2) - f12 
+           
+           sm = sm + rec%mat(i)%Vpphh(II,JJ)**2/denom 
+        end do
+     end do
+
   end do 
   
   MBPT2=sm

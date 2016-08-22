@@ -30,13 +30,13 @@ program simple_shell_model
   read(msstr,'(I5)') ms
 
   
-  print*, 'what is N?'
-  read*, n
-  print*, 'what is ml?'
-  read*, ml
-  print*, 'what is ms?'
-  read*, ms
-  
+   print*, 'what is N?'
+   read*, n
+   print*, 'what is ml?'
+   read*, ml
+   print*, 'what is ms?'
+   read*, ms
+
   m = emax*(emax+1)
 
   M2b = m*(m-1)/2
@@ -86,10 +86,9 @@ program simple_shell_model
   
   if (emax > 3) then     
      print*, 'via lanczos',R
-     nstates = 10 
+     nstates = 30 
      allocate(vecs(R,nstates),vals(nstates))  
-     call lanczos(H,vecs,vals,R,nstates)      
-    
+     call lanczos(H,vecs,vals,R,nstates)          
   else     
      nstates = R
      call dsyev('V','U',R,H,R,eig,dwork,10*R,info) 
@@ -101,18 +100,23 @@ program simple_shell_model
   t1 = omp_get_wtime()
  
   print*, t1 - t2, 'time'
-  if (evecs == 'y') then 
-     call find_percentages(SD,vecs,N,R,M,perc,nstates)
-     open(unit=37,file = 'level_percentages.dat') 
-     do i =1,R
-        write(37,*) perc(i,1:3)
-     end do 
-     close(37)
-  end if
+   if (evecs == 'y') then 
+      call find_percentages(SD,vecs,N,R,M,perc,nstates)
+  !    open(unit=37,file = 'level_percentages.dat') 
+   !   do i =1,R
+    !     write(37,*) perc(i,1:3)
+    !  end do 
+     ! close(37)
+   end if
   
-  open(unit = 38,file = 'CI_spectrum.dat',position='append') 
-      write(38,*) s, offset+vals(1:10) 
-  close(38) 
+  do i = 1, 10
+     write(49,'(2(I5),4(f16.9))') Ml , Ms, vals(i),perc(i,1),perc(i,2),perc(i,3) 
+  end do  
+
+  
+  ! open(unit = 38,file = 'CI_spectrum.dat',position='append') 
+  !     write(38,*) s, offset+vals(1:30) 
+  ! close(38) 
   
 end program
 !==================================================
@@ -207,11 +211,14 @@ subroutine construct_H(SD,H,T,V,RX,m,M2,N)
     do j = i+1,RX
        ! use binary strings to compute H
        call to_binary(b1,SD(i),M)
+       IF (sum(b1(1:6)) < 3 ) cycle 
        call to_binary(b2,SD(j),M)
-        res = b1 - b2 
-        sm = b1 + b2
-     
-        x = sum(abs(res))
+       IF (sum(b2(1:6)) < 3 ) cycle       
+
+       res = b1 - b2 
+       sm = b1 + b2
+       
+       x = sum(abs(res))
 
         
        if (x > 4) cycle 
@@ -524,7 +531,7 @@ subroutine find_percentages(SD,H,N,R,M,perc,ns)
   end do 
 end subroutine    
 !=============================================
-subroutine arrange_states(maxE,q_actual,order)
+subroutine arrange_states(maxE,quant_num,order)
   implicit none 
   !!! states are ordered by these criteria:
  
@@ -536,88 +543,146 @@ subroutine arrange_states(maxE,q_actual,order)
   !!! this way we have a block diagonal hamiltonian
   !!! so LAPACK won't have a stroke... 
 
-  integer,dimension((maxE*maxE+maxE),3) :: quant_num,q_actual 
+  integer,dimension((maxE*maxE+maxE),3) :: quant_num 
   integer,dimension((maxE*maxE+maxE)/2) :: order,en
-  integer :: i,maxE,a,b,j,m,n,R,Nprin
-  
-  order=0
+  integer :: i,maxE,a,b,j,m,n,R,n_princ,Ml,MS
+ 
   j=1
-  quant_num(:,3)=-1
+  do R = 0, maxE-1 
+     do ML = -R,R,2 
+        do MS = -1,1,2 
+           n_princ = (R - abs(ML))/2
+           
+           quant_num(j,1) = n_princ
+           quant_num(j,2) = ML
+           quant_num(j,3) = MS 
+           j=j+1
+        end do
+     end do
+  end do
   
-  a = maxE*(maxE+1)/2
-  
-  do m=0,maxE-1
-     
-    do n=0, (maxE-1-m)/2
-          
-          quant_num( j : j+1 , 1 ) = n
-          quant_num( j , 2 ) = -m
-          en(j)= 2*n+m+1
+  j=1
+  !! vector that stores the order states are filled is compiled
+  do while ( j .le. maxE*(maxE+1)/2 )
+     i=1
+     do while ( i .le. maxE*(maxE+1)/2 ) 
         
-          j=j+1
-    end do 
-    
-    if (m==0) cycle
-    
-    do n=0, (maxE-1-m)/2
-      
-          quant_num( j : j+1 , 1 ) = n
-          quant_num( j , 2 ) = m
-          en(j)= 2*n+m+1
-        
-          j=j+1
-    end do 
-    
- end do 
- 
- quant_num(a+1:2*a,:) = quant_num( 1:a, : )
- 
- quant_num(a+1:2*a,3) = 1
- 
-j=1
- 
-
-!! vector that stores the order states are filled is compiled
-do while ( j .le. maxE*(maxE+1)/2 )
-   i=1
- do while ( i .le. maxE*(maxE+1)/2 ) 
-    
   
-    if ( en( i ) == minval(en) ) then 
-       
+        if ( en( i ) == minval(en) ) then 
+           
           
-          order(j) = i 
-          i=i+1
-          j=j+1
-          
-          en( i-1 ) = 1000
-
-          exit
+           order(j) = i 
+           i=i+1
+           j=j+1
+           
+           en( i-1 ) = 1000
+           
+           exit
       
        
-   end if
-   
-   i=i+1
-
-  end do 
-end do 
-
-j = 1 
-
-do R = 1, maxE
-   do Nprin = 0, (R-1)/2
-   do i = 1, maxE*(maxE+1) 
-     If (quant_num(i,1) == Nprin) then 
-        if (abs(quant_num(i,2)) == R -2*Nprin - 1 ) then 
-           q_actual(j,:) = quant_num(i,:) 
-           j = j+1
         end if
-     end if
-     end do 
-   end do 
-end do 
+   
+        i=i+1
+        
+     end do
+  end do
+
+end subroutine arrange_states
+!===============================================
+! subroutine arrange_states(maxE,q_actual,order)
+!   implicit none 
+!   !!! states are ordered by these criteria:
+ 
+!   !!! 1. lowest spin will have lowest ordering
+!   !!! 2. lowest abs(m) will have lowest ordering 
+!   !!! 3. negative m is lower than positive
+!   !!! 4. for same m, lowest n will have lowest ordering
+  
+!   !!! this way we have a block diagonal hamiltonian
+!   !!! so LAPACK won't have a stroke... 
+
+!   integer,dimension((maxE*maxE+maxE),3) :: quant_num,q_actual 
+!   integer,dimension((maxE*maxE+maxE)/2) :: order,en
+!   integer :: i,maxE,a,b,j,m,n,R,Nprin
+  
+!   order=0
+!   j=1
+!   quant_num(:,3)=-1
+  
+!   a = maxE*(maxE+1)/2
+  
+!   do m=0,maxE-1
      
-end subroutine 
+!     do n=0, (maxE-1-m)/2
+          
+!           quant_num( j : j+1 , 1 ) = n
+!           quant_num( j , 2 ) = -m
+!           en(j)= 2*n+m+1
+        
+!           j=j+1
+!     end do 
+    
+!     if (m==0) cycle
+    
+!     do n=0, (maxE-1-m)/2
+      
+!           quant_num( j : j+1 , 1 ) = n
+!           quant_num( j , 2 ) = m
+!           en(j)= 2*n+m+1
+        
+!           j=j+1
+!     end do 
+    
+!  end do 
+ 
+!  quant_num(a+1:2*a,:) = quant_num( 1:a, : )
+ 
+!  quant_num(a+1:2*a,3) = 1
+ 
+! j=1
+ 
+
+! !! vector that stores the order states are filled is compiled
+! do while ( j .le. maxE*(maxE+1)/2 )
+!    i=1
+!  do while ( i .le. maxE*(maxE+1)/2 ) 
+    
+  
+!     if ( en( i ) == minval(en) ) then 
+       
+          
+!           order(j) = i 
+!           i=i+1
+!           j=j+1
+          
+!           en( i-1 ) = 1000
+
+!           exit
+      
+       
+!    end if
+   
+!    i=i+1
+
+!   end do 
+! end do 
+
+! j = 1 
+
+! do R = 1, maxE
+!    do Nprin = 0, (R-1)/2
+!    do i = 1, maxE*(maxE+1) 
+!      If (quant_num(i,1) == Nprin) then 
+!         if (abs(quant_num(i,2)) == R -2*Nprin - 1 ) then 
+!            q_actual(j,:) = quant_num(i,:) 
+!            j = j+1
+!         end if
+!      end if
+!      end do 
+!    end do 
+! end do 
+     
+! end subroutine 
 
 subroutine lanczos( mat , vecs,vals,N,nev ) 
   ! mat is the matrix
