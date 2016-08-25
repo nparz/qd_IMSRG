@@ -17,6 +17,7 @@ program magnus_IMSRG
   real(8) :: omp_get_wtime
   type(full_ham) :: HAM,ETA,G,DG,HD,HS,AD,INT1,INT2,w1,w2,ETA0,G0,HS0,DEN,DS
   type(full_sp_block_mat) :: TDA
+  type(cc_mat) :: HCC,OCC 
   character(5) :: hwstr,nstr,emaxstr,mlstr,msstr,cutstr
   character(7) :: genstr
   character(1) :: status
@@ -67,11 +68,13 @@ program magnus_IMSRG
   allocate(coefs(m,m))   !!! useless
 
   !! HFQDmod
-  call construct_two_particle_HF_basis( n , hw , emax , HAM, coefs )
+  call construct_two_particle_HF_basis( n , hw , emax , HAM, coefs ,HCC)
 
   eHF=HF_E2( HAM ) ! hartree fock energy
   e2nd = eHF +MBPT2( HAM )  ! second order perturbation theory
-
+  HCC%herm = 1.d0 
+  call copy_cc(HCC,OCC)
+  OCC%herm = -1.d0
   !=================================================================  
 
 !!! set parameters~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -201,12 +204,12 @@ subroutine s_evolve(build_gen)
    
      ! G is omega here. 
      call copy_arrays(G,G0)
-     call MAGNUS_EXPAND(DG,G,ETA,INT1,INT2,AD,w1,w2) ! get d(omega)       
+     call MAGNUS_EXPAND(DG,G,ETA,INT1,INT2,AD,w1,w2,HCC,OCC) ! get d(omega)       
      call euler_step(G,DG,s,stp) ! evolve with a stupid euler step          
 
      !! baker-campbell-hausdorff expansion 
      call copy_arrays(HS,HS0)
-     call BCH_EXPAND(HS,G,HAM,INT1,INT2,AD,w1,w2) 
+     call BCH_EXPAND(HS,G,HAM,INT1,INT2,AD,w1,w2,HCC,OCC) 
       
      call copy_arrays(ETA,ETA0)
      call build_gen(ETA, HS ) 
@@ -247,7 +250,7 @@ end subroutine
 end program
 !===============================================================
 !===============================================================
-subroutine BCH_EXPAND(HS,G,H,INT1,INT2,AD,w1,w2) 
+subroutine BCH_EXPAND(HS,G,H,INT1,INT2,AD,w1,w2,HCC,OCC) 
   use commutators
   use ME_general
   use IMSRG_tools 
@@ -257,7 +260,8 @@ subroutine BCH_EXPAND(HS,G,H,INT1,INT2,AD,w1,w2)
   integer :: trunc,i,m,n
   type(full_ham) :: H , G, ETA, INT1, INT2, HS, AD,w1,w2
   real(8) ::  cof(11),ex,ex2
- 
+  type(cc_mat) :: OCC,HCC
+  
   cof = (/1.d0,0.5d0,0.166666666666666666d0, &
        0.04166666666666666d0,0.0083333333333333333d0,.001388888888888d0, &
        1.984126984d-4,2.48015873d-5,2.755731922d-6,2.755731922d-7,2.505210839d-8/) 
@@ -291,20 +295,20 @@ subroutine BCH_EXPAND(HS,G,H,INT1,INT2,AD,w1,w2)
 
 ! zero body commutator
      call set_to_zero(INT2)
-     call xcommutator_110(m-n,n,G,AD,ex)
-     call xcommutator_220(G,AD,ex2)
+     call commutator_110(m-n,n,G,AD,ex)
+     call commutator_220(G,AD,ex2)
   
      INT2%E0 = ex+ex2
 
 !! one body 
-     call xcommutator_111(G,AD,INT2) 
-     call xcommutator_121(G,AD,INT2) 
-     call xcommutator_221(G,AD,INT2,w1,w2) 
+     call commutator_111(G,AD,INT2) 
+     call commutator_121(G,AD,INT2) 
+     call commutator_221(G,AD,INT2,w1,w2) 
 
      call set_to_zero(w1)
 !! two body
-     call xcommutator_122(G,AD,INT2)
-     call xcommutator_222(G,AD,INT2,w1) 
+     call commutator_122(G,AD,INT2)
+     call commutator_222(G,AD,INT2,w1,HCC,OCC) 
    
      
      ! so now just add INT1 + c_n * INT2 to get current value of HS
@@ -314,7 +318,7 @@ subroutine BCH_EXPAND(HS,G,H,INT1,INT2,AD,w1,w2)
 end subroutine BCH_EXPAND
 !====================================================================
 !====================================================================
-subroutine MAGNUS_EXPAND(DG,G,ETA,INT1,INT2,AD,w1,w2)
+subroutine MAGNUS_EXPAND(DG,G,ETA,INT1,INT2,AD,w1,w2,HCC,OCC)
   use commutators
   use ME_general
   use IMSRG_tools 
@@ -323,6 +327,7 @@ subroutine MAGNUS_EXPAND(DG,G,ETA,INT1,INT2,AD,w1,w2)
   real(8), parameter :: conv = 1e-5
   integer :: trunc,i
   type(full_ham) :: G, ETA, INT1, INT2, DG, AD,w1,w2
+  type(cc_mat) :: OCC,HCC
   real(8) ::  cof(6)
  
   ! Intermediates are ANTI-HERMITIAN 
@@ -347,14 +352,14 @@ subroutine MAGNUS_EXPAND(DG,G,ETA,INT1,INT2,AD,w1,w2)
    
      call set_to_zero(INT2)
 !! one body commutators
-     call xcommutator_111(G,AD,INT2) 
-     call xcommutator_121(G,AD,INT2) 
-     call xcommutator_221(G,AD,INT2,w1,w2) 
+     call commutator_111(G,AD,INT2) 
+     call commutator_121(G,AD,INT2) 
+     call commutator_221(G,AD,INT2,w1,w2) 
 
      call set_to_zero(w1)
 !! two body 
-     call xcommutator_122(G,AD,INT2)
-     call xcommutator_222(G,AD,INT2,w1) 
+     call commutator_122(G,AD,INT2)
+     call commutator_222(G,AD,INT2,w1,HCC,OCC) 
   
      call add_arrays(INT1 , 1.d0 , INT2 , cof(i-1) , DG ) !ME_general
      if ( mat_2_norm(INT2) *abs(cof(i-1))/ mat_2_norm(INT1) < conv ) exit 
