@@ -157,8 +157,8 @@ subroutine LANCZOS_DIAGONALIZE(OP,Vecs,nev)
   do ix = 1,p
      do jx = 1,h
                           
-         li = Op%states(Op%eh(jx),2)
-         si = Op%states(Op%eh(jx),3)
+         li = Op%states(jx,2)
+         si = Op%states(jx,3)
          la = Op%states(Op%ep(ix),2)
          sa = Op%states(Op%ep(ix),3)
               
@@ -185,8 +185,8 @@ subroutine LANCZOS_DIAGONALIZE(OP,Vecs,nev)
       
               p1=op%ep(a)
               p2=op%ep(b)
-              h1=op%eh(i)
-              h2=op%eh(j)
+              h1=i
+              h2=j
               
               
               li = Op%states(h1,2)
@@ -324,7 +324,7 @@ subroutine LANCZOS_1p_ATTACHED(OP,nev,dm,d,norm_1p)
 
            p1=op%ep(a)
            p2=op%ep(b)
-           h1=op%eh(i)
+           h1=i
            
            li = Op%states(h1,2)
            si = Op%states(h1,3)
@@ -436,8 +436,8 @@ subroutine LANCZOS_1h_REMOVED(OP,nev,dm,d,norm_1p)
   sps = 0 
   do ix = 1,h
 
-     la = Op%states(Op%eh(ix),2)
-     sa = Op%states(Op%eh(ix),3)
+     la = Op%states(ix,2)
+     sa = Op%states(ix,3)
               
      Ml = -la
      Ms = -sa 
@@ -454,8 +454,8 @@ subroutine LANCZOS_1h_REMOVED(OP,nev,dm,d,norm_1p)
      do b = a+1,h
         do i = 1, p
 
-           p1=op%eh(a)
-           p2=op%eh(b)
+           p1=a
+           p2=b
            h1=op%ep(i)
            
            li = Op%states(h1,2)
@@ -580,8 +580,8 @@ subroutine matvec_prod(N,OP,Q_op,Qout,w1,w2,v,w)
   do ix = 1,p
      do jx = 1,h
                           
-         li = Op%states(Op%eh(jx),2)
-         si = Op%states(Op%eh(jx),3)
+         li = Op%states(jx,2)
+         si = Op%states(jx,3)
          la = Op%states(Op%ep(ix),2)
          sa = Op%states(Op%ep(ix),3)
               
@@ -612,8 +612,8 @@ subroutine matvec_prod(N,OP,Q_op,Qout,w1,w2,v,w)
       
               p1=op%ep(a)
               p2=op%ep(b)
-              h1=op%eh(i)
-              h2=op%eh(j)
+              h1=i
+              h2=j
                            
               li = Op%states(h1,2)
               si = Op%states(h1,3)
@@ -699,7 +699,7 @@ subroutine matvec_1p_attached(N,dm,OP,v,w)
       
            p1=op%ep(a)
            p2=op%ep(b)
-           h1=op%eh(i)
+           h1=i
 
                            
            li = Op%states(h1,2)
@@ -760,8 +760,8 @@ subroutine matvec_1h_removed(N,dm,OP,v,w)
   
   do ix = 1,h                          
      
-     la = Op%states(Op%eh(ix),2)
-     sa = Op%states(Op%eh(ix),3)
+     la = Op%states(ix,2)
+     sa = Op%states(ix,3)
               
      Ml = -la
      Ms = -sa 
@@ -779,8 +779,8 @@ subroutine matvec_1h_removed(N,dm,OP,v,w)
      do b = a+1,h
         do i = 1, p
       
-           p1=op%eh(a)
-           p2=op%eh(b)
+           p1=a
+           p2=b
            h1=op%ep(i)
 
                            
@@ -828,8 +828,8 @@ subroutine unwrap( v, AX ,N)
   do ix = 1,p
      do jx = 1,h
                           
-         li = AX%states(AX%eh(jx),2)
-         si = AX%states(AX%eh(jx),3)
+         li = AX%states(jx,2)
+         si = AX%states(jx,3)
          la = AX%states(AX%ep(ix),2)
          sa = AX%states(AX%ep(ix),3)
               
@@ -852,8 +852,8 @@ subroutine unwrap( v, AX ,N)
       
               p1=AX%ep(a)
               p2=AX%ep(b)
-              h1=AX%eh(i)
-              h2=AX%eh(j)
+              h1=i
+              h2=j
               
               
               li = AX%states(h1,2)
@@ -921,7 +921,7 @@ subroutine unwrap_1p(v,vec,AX,N,dm)
       
            p1=AX%ep(a)
            p2=AX%ep(b)
-           h1=AX%eh(i)
+           h1=i
            
            li = AX%states(h1,2)
            si = AX%states(h1,3)
@@ -962,8 +962,8 @@ subroutine unwrap_1h(v,vec,AX,N,dm)
  
   do ix = 1,h
      
-     la = AX%states(AX%eh(ix),2)
-     sa = AX%states(AX%eh(ix),3)
+     la = AX%states(ix,2)
+     sa = AX%states(ix,3)
               
      Ml = -la
      Ms = -sa 
@@ -981,8 +981,8 @@ subroutine unwrap_1h(v,vec,AX,N,dm)
      do b = a+1,h
         do i = 1, p
       
-           p1=AX%eh(a)
-           p2=AX%eh(b)
+           p1=a
+           p2=b
            h1=AX%ep(i)
            
            li = AX%states(h1,2)
@@ -1024,8 +1024,8 @@ subroutine rewrap( v, AX ,N )
   do ix = 1,p
      do jx = 1,h
                           
-         li = AX%states(AX%eh(jx),2)
-         si = AX%states(AX%eh(jx),3)
+         li = AX%states(jx,2)
+         si = AX%states(jx,3)
          la = AX%states(AX%ep(ix),2)
          sa = AX%states(AX%ep(ix),3)
               
@@ -1048,8 +1048,8 @@ subroutine rewrap( v, AX ,N )
       
               p1=AX%ep(a)
               p2=AX%ep(b)
-              h1=AX%eh(i)
-              h2=AX%eh(j)
+              h1=i
+              h2=j
               
               
               li = AX%states(h1,2)
@@ -1117,7 +1117,7 @@ subroutine rewrap_1p(v,vec,AX,N,dm)
       
            p1=AX%ep(a)
            p2=AX%ep(b)
-           h1=AX%eh(i)
+           h1=i
            
            li = AX%states(h1,2)
            si = AX%states(h1,3)
@@ -1158,8 +1158,8 @@ subroutine rewrap_1h(v,vec,AX,N,dm)
  
   do ix = 1,h
      
-     la = AX%states(AX%eh(ix),2)
-     sa = AX%states(AX%eh(ix),3)
+     la = AX%states(ix,2)
+     sa = AX%states(ix,3)
               
      Ml = -la
      Ms = -sa 
@@ -1177,8 +1177,8 @@ subroutine rewrap_1h(v,vec,AX,N,dm)
      do b = a+1,h
         do i = 1, p
       
-           p1=AX%eh(a)
-           p2=AX%eh(b)
+           p1=a
+           p2=b
            h1=AX%ep(i)
            
            li = AX%states(h1,2)

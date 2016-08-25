@@ -31,87 +31,61 @@ program gs_IMSRG
 !=================================================================
  !!! gather inputs, start timer, open file for GS write
 
-time=omp_get_wtime()
- 
-call getarg(1,nstr)
-call getarg(2,hwstr)
-call getarg(3,emaxstr)
-call getarg(4,mlstr)
-call getarg(5,msstr) 
-call getarg(6,cutstr)
-call getarg(7,pstr)  
+  time=omp_get_wtime()
 
-If ( len(trim(adjustl(mlstr)))* len(trim(adjustl(msstr))) &
-     * len(trim(adjustl(cutstr))) > 0 ) then 
-   run_tda = .true. 
-   read(mlstr,'(I5)') HS%mltarg
-   read(msstr,'(I5)') HS%mstarg
-   read(cutstr,'(I5)') HS%cutshell
-else 
-   run_tda = .false. 
-end if 
+  call getarg(1,nstr)
+  call getarg(2,hwstr)
+  call getarg(3,emaxstr)
+  call getarg(4,mlstr)
+  call getarg(5,msstr) 
 
-read(nstr,'(I5)') n
-read(hwstr,'(f5.2)') hw
-read(emaxstr,'(I5)') emax
+  read(mlstr,'(I5)') HS%mltarg
+  read(msstr,'(I5)') HS%mstarg
+  
+  read(nstr,'(I5)') n
+  read(hwstr,'(f5.2)') hw
+  read(emaxstr,'(I5)') emax
+  
+  m = emax*(emax+1) !basis
 
-m = emax*(emax+1) !basis
+  write(hwstr,'(f5.2)') hw
+  
+  HS%hospace = hw
+  
+  nstr = adjustl(nstr)
+  hwstr= adjustl(hwstr) 
+  emaxstr = adjustl(emaxstr)
+  !=================================================================
 
-write(hwstr,'(f5.2)') hw
 
-HS%hospace = hw
-
-nstr = adjustl(nstr)
-hwstr= adjustl(hwstr) 
-emaxstr = adjustl(emaxstr)
-!=================================================================
-
-!=================================================================
 !!! construct HF basis
   allocate(coefs(m,m))
-  If ( len(trim(adjustl(pstr))) > 0 ) then 
-     read(pstr,'(f9.6)') pert
-     call construct_two_particle_HF_basis( n , hw , emax , HS, coefs,HCC ,pert)
-  else
-     call construct_two_particle_HF_basis( n , hw , emax , HS, coefs,HCC )
-  end if 
+  call construct_two_particle_HF_basis( n , hw , emax , HS, coefs,HCC )
   eHF=HF_E2( HS )
   e2nd = eHF +MBPT2( HS )   
   print*, 'Hartree-Fock Energy: ', eHF
-
+  
+  ! these are cross coupled arrays 
   call copy_cc(HCC,ETACC) 
   
-!=================================================================  
-
-!================================================================
-!<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
-!================================================================
 !!! DECOUPLE GROUND STATE
-!================================================================
-!<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
-!================================================================
-
+  
 
 !!! allocate workspaces ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
-  HS%IMSRG3 = .false. ! use IMSRG(2) formulas
   neq=get_num_elements( HS )
   allocate(cur_vec(neq))
   allocate(d_vec(neq))
-  allocate(work2(100+21*neq))
-   
+  allocate(work2(100+21*neq)) ! terrible work array 
+  
   HS%neq=neq
-  !call divide_work(HS) 
-  call allocate_everything(HS,ETA) 
+
+  call allocate_everything(HS,ETA)  ! making copies of HS for eta and intermediates 
   call allocate_everything(HS,HD) 
   call allocate_everything(HS,w1) 
   call allocate_everything(HS,w2)
   
   ETA%herm = -1 
 
- ! call system('rm CI_spectrum.dat') 
-!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-!  call run_simple_CI('n') 
-!  stop
 !!! set parameters for solver ~~~~~~~~~~~~~~~~~~~~~~~
   rel=1e-8       ! relative error
   abse=1e-6      ! absolute error
@@ -123,31 +97,8 @@ emaxstr = adjustl(emaxstr)
   ocrit = 10.d0  ! previous critera
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
- 
-!==================================================================  
- !  if you want to plot the evolution with "s"
-
-if (run_tda) then 
-  open(unit=31, &
-  file='../output/spectrum_'//trim(hwstr)//'_'//&
- trim(nstr)//'_'//trim(emaxstr)//'_Ml'//trim(Mlstr)//&
- 'Ms'//trim(msstr)//'.dat')
-end if 
-  !=================================================================
-!!! start IM-SRG loop
-  
-  if (run_tda) then 
-     call build_TDAmat(HS,TDA)
-     call calc_TDA(HS,TDA)
-     call diagonalize_blocks(TDA) 
-     call write_spec
-  end if 
-
-   print*, 'CI:', s
-!   call run_simple_CI('y')
-
   pr = 1
+
   do while (crit > conv_criteria) 
  
      sm =0.d0 
@@ -165,28 +116,21 @@ end if
      crit = abs( (crit - HS%E0 )/crit ) 
      write(*,'(I5,3(e14.6))') pr,s,HS%E0,crit
      pr = pr + 1 
-    !  if (pr == 5) then
-    !     print*, 'CI:', s
-    ! call run_simple_CI('n')
-    !  pr = 0 
-    !  end if 
-  !call print_matrix(HS%fph)
+
   end do
     
-  print*, 'CI:', s
-!  call run_simple_CI('y') 
-  print*, 'final s:', s
-
   numstates = 5
-  
-  !call calculate_excited_states( HS%Mltarg, HS%Mstarg, numstates , HS ) 
-  call calculate_1p_attached( HS%Mltarg, HS%Mstarg, numstates , HS ) 
-  call calculate_1h_removed( HS%Mltarg, HS%Mstarg, numstates , HS ) 
+
+  if (HS%Mstarg == 0 ) then 
+     call calculate_excited_states( HS%Mltarg, HS%Mstarg, numstates , HS ) 
+  else
+     call calculate_1p_attached( HS%Mltarg, HS%Mstarg, numstates , HS ) 
+     call calculate_1h_removed(  HS%Mltarg, HS%Mstarg, numstates , HS ) 
+  end if
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !=================================================================
 !================================================================
 !!! write all the data to file
-
 time2 = omp_get_wtime()
 
  open(unit=39,file='../output/TRAD_'//trim(nstr)//'_'//trim(hwstr) &
@@ -201,7 +145,8 @@ contains
 !=================================================================
 !=================================================================
 subroutine run_simple_CI(evecs) 
-  ! even less efficient
+  ! this writes the current Hamiltonian to file and
+  ! runs CI on it. 
   implicit none 
   
   real(8) :: e_off
@@ -271,53 +216,6 @@ subroutine run_simple_CI(evecs)
   
 end subroutine
 !===============================================        
-subroutine write_spec
-  implicit none 
-  
-  character(3) :: levnum
-  character(15) :: fmt
-  real(8),dimension(n*(m-n)+2) :: levs
-  real(8) :: off
-
-  off = HS%E0 - off 
-  levs(1) = s + s_off
-  levs(2) = HS%E0
-  i=3
-  do q=1,TDA%blocks
-  
-     if ( TDA%map(q) > 0 ) then 
-        levs(i:i+TDA%map(q)-1) = TDA%blkM(q)%eigval + HS%E0
-        i = i + TDA%map(q)
-     end if 
-  end do 
-  
-  i = i-1
-  write(levnum,'(I3)') i
-  levnum=adjustl(levnum) 
-  fmt =  '('//trim(levnum)//'(f12.7))' 
-  
-  write(31,trim(fmt)) levs(1:i)
- 
-end subroutine
-!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
-subroutine make_map
-  implicit none 
-  
-  open(unit=30, &
-  file='../output/map_'//trim(hwstr)//'_'//&
- trim(nstr)//'_'//trim(emaxstr)//'.dat')
- 
-  i=3
- 
-  do q=1,TDA%blocks
-     
-     write(30,'(3(I5))') TDA%blkM(q)%lmda,i
-     i=i+TDA%map(q)
-  end do 
- 
-  close(30)
-end subroutine
-!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 end program
 !================================================
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -355,19 +253,19 @@ subroutine dGam(t,yp,H,HCC,ETACC)
   neq=H%neq
   
 !! zero body derivatives
-  call xcommutator_110(m-n,n,ETA,H,ex)
-  call xcommutator_220(ETA,H,ex2)
+  call commutator_110(m-n,n,ETA,H,ex)
+  call commutator_220(ETA,H,ex2)
   
   DER%E0 = ex+ex2
 
 !! one body derivatives
-  call xcommutator_111(ETA,H,DER) 
-  call xcommutator_121(ETA,H,DER)  
-  call xcommutator_221(ETA,H,DER,w1,w2) 
+  call commutator_111(ETA,H,DER) 
+  call commutator_121(ETA,H,DER)  
+  call commutator_221(ETA,H,DER,w1,w2) 
   
 !! two body derivatives
-  call xcommutator_122(ETA,H,DER)
-  call xcommutator_222(ETA,H,DER,w1,HCC,ETACC) 
+  call commutator_122(ETA,H,DER)
+  call commutator_222(ETA,H,DER,w1,HCC,ETACC) 
 
 !! re-write in a way that shampine and gordon can handle
   call vectorize(DER,yp,neq)
