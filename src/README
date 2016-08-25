@@ -1,0 +1,55 @@
+This code sucks...
+
+MAKE THIS DIRECTORY
+
+IMSRG_HOME/src/
+IMSRG_HOME/TBMEfiles/
+IMSRG_HOME/output/
+IMSRG_HOME/hamiltonians
+
+place the ME.bin in TBMEfiles
+
+install arpack on your system
+
+it's like
+
+sudo apt-get libarpak-dev
+
+or something...
+
+Also need lapack and blas and gfortran
+
+makefile should be gfortran, but if not, copy "makefile_gfortran" onto makefile
+
+hopefully this works.
+
+
+
+: make
+
+makes the ode solver version
+
+: make magnus
+
+makes the magnus version
+
+
+Mangus version has not been cared for in a long time, don't hold me accountable for it right now.
+
+
+
+usage:
+
+./gs_decouple N hw R ML MS
+
+
+
+N = electrons  (2,6,12,20...)
+hw = float (0.5,1.0...)
+R = shells (3,4,5,6...)
+
+ML = (0,\pm 1,\pm 2,3... )
+MS = (0,\pm 1)  
+
+
+
